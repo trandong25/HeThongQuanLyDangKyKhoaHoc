@@ -1,10 +1,15 @@
 from ecourse import app
+from flask import render_template
+
+from ecourse.models import MonHoc
+
 
 @app.route("/")
 def index():
-    return "Hello world, Đây là Hệ thống Quản lý Đăng ký Khóa học!"
+    courses = MonHoc.query.all()
+    return render_template("index.html", courses=courses)
 
 
 if __name__== "__main__":
     with app.app_context():
-        app.run(debug=True, port=5000)
+        app.run(debug=True)

@@ -1,0 +1,18 @@
+{%extends 'layout/base.html'%}
+{% block content %}
+<h2 class="text-center mb-4">Danh sách khóa học mới nhất</h2>
+<div class="row">
+    {% for c in courses %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <img src="https://www.bing.com/th?id=OADD2.7353118511174_1NNLCPIUNKM5HOYTCG&pid=21.2&c=17&roil=0.0216&roit=0.1032&roir=0.9766&roib=0.8482&w=300&h=157&dynsize=1&qlt=90&dpr=2.00" class="card-img-top" alt="{{ c.name }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ c.name }}</h5>
+                <p class="card-text text-danger fw-bold">99999999 VNĐ</p>
+                <a href="#" class="btn btn-primary w-100">Đăng ký ngay</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

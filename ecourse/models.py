@@ -1,7 +1,7 @@
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum, Date
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime,date
 from ecourse import db, app
 from enum import Enum as UserEnum
 
@@ -78,3 +78,22 @@ class DangKy(BaseModel):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        # 1. Tạo Môn Học mẫu
+        mh1 = MonHoc(name="Lập trình Python", so_tin_chi=3)
+        mh2 = MonHoc(name="Cấu trúc dữ liệu", so_tin_chi=4)
+
+        # 2. Tạo Học Kỳ mẫu
+        hk1 = HocKy(name="Học kỳ 1 - 2026", ngay_bat_dau=date(2026, 9, 5), han_dang_ky=datetime(2026, 9, 20, 23, 59))
+
+        # Đẩy Môn học và Học kỳ vào DB trước để lấy ID
+        db.session.add_all([mh1, mh2, hk1])
+        db.session.commit()
+
+        # 3. Tạo Lớp Học Phần mẫu (Liên kết với Môn học và Học kỳ ở trên)
+        lhp1 = LopHocPhan(mon_hoc_id=mh1.id, hoc_ky_id=hk1.id, phong_hoc="Phòng A101", thu=2, ca_hoc=1, so_luong_max=40)
+        lhp2 = LopHocPhan(mon_hoc_id=mh2.id, hoc_ky_id=hk1.id, phong_hoc="Phòng B205", thu=4, ca_hoc=3, so_luong_max=50)
+
+        db.session.add_all([lhp1, lhp2])
+        db.session.commit()
+
+        print("Đã chạy xong dữ liệu giả !")
