@@ -1,3 +1,5 @@
+from tkinter.font import names
+
 import pytest
 from datetime import datetime,timedelta
 from ecourse.dao import load_lop_hoc_phan, dang_ky_lop
@@ -114,3 +116,60 @@ def test_dang_ky_khong_login(sample_lop_hoc_phan):
 
         with pytest.raises(Exception, match= "Chức năng cần đăng nhập để thực hiện"):
             dang_ky_lop(l1.id)
+
+def test_dang_ky_sau_tg_fail(test_session,sample_lop_hoc_phan,mock_login_user):
+    l1 = sample_lop_hoc_phan[0]
+
+    hk1 = HocKy.query.get(l1.hoc_ky_id)
+    hk1.han_dang_ky = datetime.now() - timedelta(days=1)
+    test_session.commit()
+
+    with pytest.raises(ValueError, match="Đã hết thời hạn đăng ký"):
+        dang_ky_lop(l1.id)
+def test_dang_ky_mon_da_hoc_fail(test_session,sample_lop_hoc_phan,sample_student,mock_login_user):
+    l1 = sample_lop_hoc_phan[0]
+
+    phieu_cu = DangKy(sinh_vien_id = sample_student.id, lop_hoc_phan_id = l1.id, diem_tong_ket = 7.0)
+    test_session.add(phieu_cu)
+    test_session.commit()
+
+    hk_moi = HocKy(name = "HK A", active = True, ngay_bat_dau = datetime.now(), han_dang_ky = datetime.now() + timedelta(days=30))
+    test_session.add(hk_moi)
+    test_session.commit()
+
+    l_moi = LopHocPhan(mon_hoc_id=l1.mon_hoc_id, hoc_ky_id=hk_moi.id, so_luong_max=50, active=True, phong_hoc="A102",
+                       thu=5, ca_hoc=1)
+    test_session.add(l_moi)
+    test_session.commit()
+
+    with pytest.raises(ValueError, match="Bạn đã học và thi đạt môn này rồi"):
+        dang_ky_lop(l_moi.id)
+
+def test_dang_ky_trung_lich_fail(test_session, sample_lop_hoc_phan, mock_login_user):
+    l1 = sample_lop_hoc_phan[0] #t2, c1
+
+    dang_ky_lop(l1.id)
+
+    mon_moi = MonHoc(name="Môn test trùng lịch", so_tin_chi=2)
+    test_session.add(mon_moi)
+    test_session.commit()
+
+    lop_trung = LopHocPhan(mon_hoc_id=mon_moi.id, hoc_ky_id=l1.hoc_ky_id, so_luong_max=50, active=True, phong_hoc="B101", thu=l1.thu, ca_hoc=l1.ca_hoc)
+    test_session.add(lop_trung)
+    test_session.commit()
+
+    with pytest.raises(ValueError, match="Trùng lịch học"):
+        dang_ky_lop(lop_trung.id)
+
+def test_dang_ky_vuot_25_tin_chi_fail(test_session, sample_lop_hoc_phan, mock_login_user):
+    l1 = sample_lop_hoc_phan[0]
+    l2 = sample_lop_hoc_phan[1]
+
+    m1 = MonHoc.query.get(l1.mon_hoc_id)
+    m1.so_tin_chi = 23
+    test_session.commit()
+
+    dang_ky_lop(l1.id)
+
+    with pytest.raises(ValueError, match="Bạn đã vượt quá 25 tín chỉ"):
+        dang_ky_lop(l2.id)

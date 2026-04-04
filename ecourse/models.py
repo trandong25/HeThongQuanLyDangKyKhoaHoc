@@ -80,7 +80,7 @@ if __name__ == '__main__':
         db.create_all()
 
         import hashlib
-        from datetime import datetime, timedelta
+        from datetime import timedelta
 
         default_password = str(hashlib.md5('123456'.encode('utf-8')).hexdigest())
 
