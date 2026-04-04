@@ -1,3 +1,6 @@
+import hashlib
+from os import name
+
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum, Date
 from sqlalchemy.orm import relationship
@@ -77,23 +80,57 @@ class DangKy(BaseModel):
 
 if __name__ == '__main__':
     with app.app_context():
+        # 1. Đập đi xây lại: Xóa toàn bộ dữ liệu cũ và tạo bảng mới
+        db.drop_all()
         db.create_all()
-        # 1. Tạo Môn Học mẫu
+        print("Đã làm sạch Database...")
+
+        # 2. TẠO USER VÀ ADMIN MẪU
+        user1 = User(
+            name="Nguyễn Văn Sinh Viên",
+            username="student1",
+            password=hashlib.md5("123456".encode('utf-8')).hexdigest(),
+            user_role=UserRole.SINHVIEN
+        )
+        admin1 = User(
+            name="Quản Trị Viên",
+            username="admin",
+            password=hashlib.md5("123456".encode('utf-8')).hexdigest(),
+            user_role=UserRole.ADMIN
+        )
+        # Commit User trước để lấy ID
+        db.session.add_all([user1, admin1])
+        db.session.commit()
+
+        # 3. TẠO MÔN HỌC MẪU
         mh1 = MonHoc(name="Lập trình Python", so_tin_chi=3)
         mh2 = MonHoc(name="Cấu trúc dữ liệu", so_tin_chi=4)
-
-        # 2. Tạo Học Kỳ mẫu
-        hk1 = HocKy(name="Học kỳ 1 - 2026", ngay_bat_dau=date(2026, 9, 5), han_dang_ky=datetime(2026, 9, 20, 23, 59))
-
-        # Đẩy Môn học và Học kỳ vào DB trước để lấy ID
-        db.session.add_all([mh1, mh2, hk1])
+        db.session.add_all([mh1, mh2])
         db.session.commit()
 
-        # 3. Tạo Lớp Học Phần mẫu (Liên kết với Môn học và Học kỳ ở trên)
+        # Thử nghiệm 1 môn có tiên quyết (AI cần học trước Python)
+        mh3 = MonHoc(name="Trí tuệ nhân tạo", so_tin_chi=3, mon_tien_quyet_id=mh1.id)
+        db.session.add(mh3)
+        db.session.commit()
+
+        # 4. TẠO HỌC KỲ MẪU
+        hk1 = HocKy(name="Học kỳ 1 - 2026", ngay_bat_dau=date(2026, 9, 5), han_dang_ky=datetime(2026, 9, 20, 23, 59))
+        db.session.add(hk1)
+        db.session.commit()
+
+        # 5. TẠO LỚP HỌC PHẦN MẪU
         lhp1 = LopHocPhan(mon_hoc_id=mh1.id, hoc_ky_id=hk1.id, phong_hoc="Phòng A101", thu=2, ca_hoc=1, so_luong_max=40)
         lhp2 = LopHocPhan(mon_hoc_id=mh2.id, hoc_ky_id=hk1.id, phong_hoc="Phòng B205", thu=4, ca_hoc=3, so_luong_max=50)
+        lhp3 = LopHocPhan(mon_hoc_id=mh3.id, hoc_ky_id=hk1.id, phong_hoc="Phòng C301", thu=6, ca_hoc=2, so_luong_max=30)
 
-        db.session.add_all([lhp1, lhp2])
+        db.session.add_all([lhp1, lhp2, lhp3])
         db.session.commit()
 
-        print("Đã chạy xong dữ liệu giả !")
+        # 6. TẠO DỮ LIỆU ĐĂNG KÝ (Mock data để test trang /history)
+        # Cho student1 đăng ký môn Python và Cấu trúc dữ liệu
+        dk1 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=lhp1.id)
+        dk2 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=lhp2.id)
+
+        db.session.add_all([dk1, dk2])
+        db.session.commit()
+        print("Đã chạy xong dữ liệu giả!")
