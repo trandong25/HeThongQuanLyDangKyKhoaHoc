@@ -1,9 +1,10 @@
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum, Date
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, date
 from ecourse import db, app
 from enum import Enum as UserEnum
+import hashlib
 
 
 class BaseModel(db.Model):
@@ -77,50 +78,53 @@ class DangKy(BaseModel):
 
 if __name__ == '__main__':
     with app.app_context():
+        # 1. Đập đi xây lại: Xóa toàn bộ dữ liệu cũ và tạo bảng mới
+        db.drop_all()
         db.create_all()
+        print("Đã làm sạch Database...")
 
-        import hashlib
-        from datetime import timedelta
-
-        default_password = str(hashlib.md5('123456'.encode('utf-8')).hexdigest())
-
-        # 2. Tạo Users (1 Admin, 2 Sinh viên)
-        admin = User(name='Giáo vụ Đào tạo', username='admin', password=default_password, active=True)
-        sv1 = User(name='Nguyễn Sinh Viên 1', username='sv01', password=default_password, active=True)
-        sv2 = User(name='Trần Sinh Viên 2', username='sv02', password=default_password, active=True)
-
-        db.session.add_all([admin, sv1, sv2])
+        # 2. TẠO USER VÀ ADMIN MẪU
+        user1 = User(
+            name="Nguyễn Văn Sinh Viên",
+            username="student1",
+            password=hashlib.md5("123456".encode('utf-8')).hexdigest(),
+            user_role=UserRole.SINHVIEN
+        )
+        admin1 = User(
+            name="Quản Trị Viên",
+            username="admin",
+            password=hashlib.md5("123456".encode('utf-8')).hexdigest(),
+            user_role=UserRole.ADMIN
+        )
+        # Commit User trước để lấy ID
+        db.session.add_all([user1, admin1])
         db.session.commit()
 
-        # 3 Tạo Học kỳ
-        now = datetime.now()
-        hk1 = HocKy(name="HK1 - 2026", active=True, ngay_bat_dau=now, han_dang_ky=now + timedelta(days=30))
-        hk2 = HocKy(name="HK2 - 2026", active=False, ngay_bat_dau=now + timedelta(days=150),
-                    han_dang_ky=now + timedelta(days=180))
-
-        db.session.add_all([hk1, hk2])
+        # 3. TẠO MÔN HỌC MẪU
+        mh1 = MonHoc(name="Lập trình Python", so_tin_chi=3)
+        mh2 = MonHoc(name="Cấu trúc dữ liệu", so_tin_chi=4)
+        db.session.add_all([mh1, mh2])
+        db.session.commit()
+        # Thử nghiệm 1 môn có tiên quyết (AI cần học trước Python)
+        mh3 = MonHoc(name="Trí tuệ nhân tạo", so_tin_chi=3, mon_tien_quyet_id=mh1.id)
+        db.session.add(mh3)
         db.session.commit()
 
-        # 4. Tạo Môn học
-        m1 = MonHoc(name="Nhập môn Lập trình", so_tin_chi=3)
-        m2 = MonHoc(name="Toán rời rạc", so_tin_chi=3)
-        db.session.add_all([m1, m2])
+        # 4. TẠO HỌC KỲ MẪU
+        hk1 = HocKy(name="Học kỳ 1 - 2026", ngay_bat_dau=date(2026, 9, 5), han_dang_ky=datetime(2026, 9, 20, 23, 59))
+        db.session.add(hk1)
+        # 5. TẠO LỚP HỌC PHẦN MẪU
+        lhp1 = LopHocPhan(mon_hoc_id=mh1.id, hoc_ky_id=hk1.id, phong_hoc="Phòng A101", thu=2, ca_hoc=1, so_luong_max=40)
+        lhp2 = LopHocPhan(mon_hoc_id=mh2.id, hoc_ky_id=hk1.id, phong_hoc="Phòng B205", thu=4, ca_hoc=3, so_luong_max=50)
+        lhp3 = LopHocPhan(mon_hoc_id=mh3.id, hoc_ky_id=hk1.id, phong_hoc="Phòng C301", thu=6, ca_hoc=2, so_luong_max=30)
+
+        db.session.add_all([lhp1, lhp2, lhp3])
         db.session.commit()
 
-        m3 = MonHoc(name="Cấu trúc dữ liệu", so_tin_chi=3, mon_tien_quyet_id=m1.id)
-        m4 = MonHoc(name="Cơ sở dữ liệu", so_tin_chi=3)
-        db.session.add_all([m3, m4])
-        db.session.commit()
+        # 6. TẠO DỮ LIỆU ĐĂNG KÝ (Mock data để test trang /history)
+        # Cho student1 đăng ký môn Python và Cấu trúc dữ liệu
+        dk1 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=lhp1.id)
+        dk2 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=lhp2.id)
 
-        # 5. Tạo Lớp học phần
-        l1 = LopHocPhan(mon_hoc_id=m1.id, hoc_ky_id=hk1.id, so_luong_max=50,
-                        active=True, phong_hoc="A101", thu=2,ca_hoc=1)
-        l2 = LopHocPhan(mon_hoc_id=m2.id, hoc_ky_id=hk1.id, so_luong_max=50,
-                        active=True, phong_hoc="B202", thu=3,ca_hoc=2)
-        l3 = LopHocPhan(mon_hoc_id=m3.id, hoc_ky_id=hk1.id, so_luong_max=40,
-                        active=True, phong_hoc="C303", thu=4,ca_hoc=1)
-        l4 = LopHocPhan(mon_hoc_id=m4.id, hoc_ky_id=hk1.id, so_luong_max=1,
-                        active=True, phong_hoc="D404", thu=5,ca_hoc=3)
-
-        db.session.add_all([l1, l2, l3, l4])
-        db.session.commit()
+        db.session.add_all([dk1, dk2])
+        print("Đã chạy xong dữ liệu giả!")
