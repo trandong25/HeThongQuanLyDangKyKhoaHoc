@@ -1,0 +1,48 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white text-center">
+                <h4>ĐĂNG KÝ TÀI KHOẢN</h4>
+            </div>
+            
+            <div class="card-body">
+                {% if error_msg %}
+                <div class="alert alert-danger">{{ error_msg }}</div>
+                {% endif %}
+
+                <form action="/register" enctype="multipart/form-data" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Họ và tên</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tên đăng nhập</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Xác nhận mật khẩu</label>
+                        <input type="password" class="form-control" name="confirm" required>
+                    </div>
+                     <div class="mb-3 ">
+                         <label >Ảnh đại diện</label>
+                        <input type="file" class="form-control" id="avatar"  name="avatar">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Đăng ký</button>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">Đã có tài khoản?
+                    <a href="/login" class="text-decoration-none">Đăng nhập ngay</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
