@@ -11,6 +11,8 @@ def create_app():
     app.secret_key = '34y394yjsbdkjsdjksdh'
     db.init_app(app)
 
+    from ecourse.index import register_route
+    register_route(app)
 
     return app
 
