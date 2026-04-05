@@ -1,12 +1,10 @@
-import hashlib
-from os import name
-
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum, Date
 from sqlalchemy.orm import relationship
-from datetime import datetime,date
+from datetime import datetime, date
 from ecourse import db, app
 from enum import Enum as UserEnum
+import hashlib
 
 
 class BaseModel(db.Model):
@@ -37,7 +35,7 @@ class MonHoc(BaseModel):
     so_tin_chi = Column(Integer, nullable=False)
 
     mon_tien_quyet_id = Column(Integer,ForeignKey('mon_hoc.id'), nullable=True)
-    #khi cần lấy môn tiên quyết mh.mon_tien_quyet.name
+
     # remote_side chỉ đích đến
     mon_tien_quyet = relationship('MonHoc', remote_side='MonHoc.id')
 
@@ -107,7 +105,6 @@ if __name__ == '__main__':
         mh2 = MonHoc(name="Cấu trúc dữ liệu", so_tin_chi=4)
         db.session.add_all([mh1, mh2])
         db.session.commit()
-
         # Thử nghiệm 1 môn có tiên quyết (AI cần học trước Python)
         mh3 = MonHoc(name="Trí tuệ nhân tạo", so_tin_chi=3, mon_tien_quyet_id=mh1.id)
         db.session.add(mh3)
@@ -116,8 +113,6 @@ if __name__ == '__main__':
         # 4. TẠO HỌC KỲ MẪU
         hk1 = HocKy(name="Học kỳ 1 - 2026", ngay_bat_dau=date(2026, 9, 5), han_dang_ky=datetime(2026, 9, 20, 23, 59))
         db.session.add(hk1)
-        db.session.commit()
-
         # 5. TẠO LỚP HỌC PHẦN MẪU
         lhp1 = LopHocPhan(mon_hoc_id=mh1.id, hoc_ky_id=hk1.id, phong_hoc="Phòng A101", thu=2, ca_hoc=1, so_luong_max=40)
         lhp2 = LopHocPhan(mon_hoc_id=mh2.id, hoc_ky_id=hk1.id, phong_hoc="Phòng B205", thu=4, ca_hoc=3, so_luong_max=50)
@@ -132,5 +127,4 @@ if __name__ == '__main__':
         dk2 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=lhp2.id)
 
         db.session.add_all([dk1, dk2])
-        db.session.commit()
         print("Đã chạy xong dữ liệu giả!")

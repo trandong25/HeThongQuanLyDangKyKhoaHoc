@@ -1,19 +1,134 @@
-import hashlib
-
+from sqlalchemy.exc import IntegrityError
+from ecourse.models import User, HocKy, MonHoc, LopHocPhan, DangKy
 from ecourse import db
-from ecourse.models import MonHoc,User,LopHocPhan,DangKy
+from flask import current_app
+import hashlib
+from flask_login import current_user
+from datetime import datetime
 
 def load_courses():
     return MonHoc.query.all()
+
+def load_hoc_ky():
+    return HocKy.query.filter(HocKy.active == True).all()
+
+def load_lop_hoc_phan(hk_id = None, kw = None, page = None):
+    query = LopHocPhan.query.filter(LopHocPhan.active == True)
+
+    if hk_id:
+        query = query.filter(LopHocPhan.hoc_ky_id.__eq__(hk_id))
+
+    if kw:
+        query =query.join(MonHoc).filter(MonHoc.name.contains(kw))
+
+    if page:
+        size = current_app.config["PAGE_SIZE"]
+        start = (int(page)-1) *size
+        query = query.slice(start,start+size)
+
+
+
+    return query.all()
+
+def count_lop_hoc_phan(hk_id = None, kw = None):
+    query = LopHocPhan.query.filter(LopHocPhan.active == True)
+
+    if hk_id:
+        query=query.filter(LopHocPhan.hoc_ky_id.__eq__(hk_id))
+    if kw:
+        query =query.join(MonHoc).filter(MonHoc.name.contains(kw))
+
+    return query.count()
+
+def get_user_by_id(user_id):
+    return User.query.get(user_id)
+
+
+def dang_ky_lop(lop_hoc_phan_id):
+    #Ràng buộc cho sinh viên phải đăng nhập để đăng ký
+    if not current_user.is_authenticated:
+        raise Exception("Chức năng cần đăng nhập để thực hiện")
+
+    # Ràng buộc cho lớp tồn tại
+    lop = LopHocPhan.query.get(lop_hoc_phan_id)
+    if not lop:
+        raise ValueError("Lớp học phần không tồn tại!")
+
+    #Ràng buộc cho không được đăng ký sau thời hạn
+    hoc_ky = HocKy.query.get(lop.hoc_ky_id)
+    if datetime.now() > hoc_ky.han_dang_ky:
+        raise ValueError("Đã hết thời hạn đăng ký")
+
+
+    #Ràng buộc cho không được bấm đăng ký nhiều lần spam
+    phieu_cu = DangKy.query.filter_by(
+        sinh_vien_id = current_user.id,
+        lop_hoc_phan_id = lop_hoc_phan_id
+    ).first()
+    if phieu_cu:
+        raise Exception("Bạn đã đăng ký lớp học phần này rồi")
+
+    #Ràng buộc cho không được đăng ký quá số lượng
+    so_luong_hien_tai = DangKy.query.filter(DangKy.lop_hoc_phan_id == lop_hoc_phan_id).count()
+    if so_luong_hien_tai >= lop.so_luong_max:
+        raise ValueError("Lớp học phần này đã đủ sĩ số")
+
+    mon_hoc = MonHoc.query.get(lop.mon_hoc_id)
+
+    #Ràng buộc cho sinh viên không được đăng ký môn đã học rồi
+    mon_da_hoc = DangKy.query.join(LopHocPhan).filter(
+        DangKy.sinh_vien_id == current_user.id,
+        LopHocPhan.mon_hoc_id == mon_hoc.id,
+        DangKy.diem_tong_ket >=5
+    ).first()
+    if mon_da_hoc:
+        raise ValueError("Bạn đã học và thi đạt môn này rồi")
+
+    cac_phieu_dk = DangKy.query.join(LopHocPhan).filter(
+        DangKy.sinh_vien_id == current_user.id,
+        LopHocPhan.hoc_ky_id == lop.hoc_ky_id
+    ).all()
+
+    tong_tin_chi = mon_hoc.so_tin_chi
+
+    for phieu in cac_phieu_dk:
+        lhp_da_dk = phieu.lop_hoc_phan
+        mh_da_dk = lhp_da_dk.mon_hoc
+
+        #Ràng buộc không được đăng ký trùng lịch học cùng thứ, cùng ca
+        if lhp_da_dk.thu == lop.thu and lhp_da_dk.ca_hoc == lop.ca_hoc:
+            raise ValueError(f"Trùng lịch học với lớp {mh_da_dk.name} (Thứ {lhp_da_dk.thu}, Ca {lhp_da_dk.ca_hoc})")
+
+        tong_tin_chi += mh_da_dk.so_tin_chi
+    # Ràng buộc cho không được đăng ký quá 25tc
+    if tong_tin_chi > 25:
+        raise ValueError("Bạn đã vượt quá 25 tín chỉ")
+
+    #Ràng buộc cho không được đăng ký nếu chưa học môn tiên quyết
+    if mon_hoc.mon_tien_quyet_id:
+        da_qua_mon = DangKy.query.join(LopHocPhan).filter(
+            DangKy.sinh_vien_id == current_user.id,
+            LopHocPhan.mon_hoc_id == mon_hoc.mon_tien_quyet_id,
+            DangKy.diem_tong_ket >= 5.0
+        ).first()
+        if not da_qua_mon:
+            raise ValueError(f"Bạn chưa học môn tiên quyết: {mon_hoc.mon_tien_quyet.name}")
+
+    phieu_dang_ky = DangKy(sinh_vien_id = current_user.id, lop_hoc_phan_id = lop.id)
+    db.session.add(phieu_dang_ky)
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise  e
+
 
 def get_classes():
     return LopHocPhan.query.all()
 
 def get_registered_classes(user_id):
     return DangKy.query.filter(DangKy.sinh_vien_id == user_id).all()
-
-def get_user_by_id(user_id):
-    return User.query.get(user_id)
 
 def auth_user(username,password):
     password = hashlib.md5(password.encode("utf-8")).hexdigest()
