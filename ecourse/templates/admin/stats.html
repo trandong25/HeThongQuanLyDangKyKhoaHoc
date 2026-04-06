@@ -1,0 +1,68 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<h1 class="text-center text-success mt-4">BÁO CÁO TÌNH HÌNH ĐĂNG KÝ HỌC PHẦN</h1>
+
+<div class="row mt-4">
+    <div class="col-md-5 col-12">
+        <table class="table table-hover table-bordered">
+            <thead class="bg-primary text-white">
+                <tr>
+                    <th>Mã Lớp</th>
+                    <th>Tên Môn</th>
+                    <th>Số SV Đã Đăng Ký</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in dang_ky_stats %}
+                <tr>
+                    <td>{{ s[0] }}</td>
+                    <td>{{ s[1] }}</td>
+                    <td class="text-danger font-weight-bold text-center">{{ s[2] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="col-md-7 col-12">
+        <canvas id="regChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    function drawBarChart(ctx, labels, data) {
+        new Chart(ctx, {
+            type: 'bar', // Biểu đồ cột
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sĩ số',
+                    data: data,
+                    borderWidth: 1,
+                    backgroundColor: '#36A2EB'
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    window.onload = function() {
+        let labels = [];
+        let data = [];
+
+        {% for s in dang_ky_stats %}
+            labels.push('Mã lớp {{s[0]}} ');
+            data.push({{s[2]}});
+        {% endfor %}
+
+        const ctx = document.getElementById('regChart');
+        drawBarChart(ctx, labels, data);
+    }
+</script>
+{% endblock %}

@@ -5,6 +5,7 @@ from flask import current_app
 import hashlib
 from flask_login import current_user
 from datetime import datetime
+from sqlalchemy import func
 
 def load_courses():
     return MonHoc.query.all()
@@ -140,3 +141,14 @@ def add_user(name,username,password,avatar):
     db.session.add(u)
     db.session.commit()
     return u
+
+
+def count_lop_by_mon_hoc():
+    return db.session.query(MonHoc.id, MonHoc.name, func.count(LopHocPhan.id)
+    ).join(LopHocPhan, LopHocPhan.mon_hoc_id == MonHoc.id,isouter=True
+    ).group_by(MonHoc.id, MonHoc.name).all()
+
+def count_sv_by_lop():
+    return (db.session.query(LopHocPhan.id, MonHoc.name,func.count(DangKy.sinh_vien_id)).join(MonHoc, MonHoc.id == LopHocPhan.mon_hoc_id)
+            .join(DangKy, DangKy.lop_hoc_phan_id == LopHocPhan.id, isouter=True)
+            .group_by(LopHocPhan.id, MonHoc.name).all())
