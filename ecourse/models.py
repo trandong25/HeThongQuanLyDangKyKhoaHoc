@@ -40,7 +40,7 @@ class MonHoc(BaseModel):
     mon_tien_quyet = relationship('MonHoc', remote_side='MonHoc.id')
 
 
-    ds_lop_hoc_phan = relationship('LopHocPhan', backref='mon_hoc', lazy= True)
+    ds_lop_hoc_phan = relationship('LopHocPhan', back_populates='mon_hoc', lazy= True)
 
     def __str__(self):
         return self.name
@@ -50,7 +50,7 @@ class HocKy(BaseModel):
     ngay_bat_dau = Column(Date,nullable=False)
     han_dang_ky = Column(DateTime, nullable=False)
 
-    ds_lop_hoc_phan = relationship('LopHocPhan', backref='hoc_ky', lazy=True)
+    ds_lop_hoc_phan = relationship('LopHocPhan', back_populates='hoc_ky', lazy=True)
 
     def __str__(self):
         return self.name
@@ -64,6 +64,9 @@ class LopHocPhan(BaseModel):
     ca_hoc = Column(Integer, nullable=False)
     so_luong_max = Column(Integer, default=50)
     da_thi_giua_ky = Column(Boolean, default=False)
+
+    mon_hoc= relationship('MonHoc', back_populates='ds_lop_hoc_phan')
+    hoc_ky= relationship('HocKy', back_populates='ds_lop_hoc_phan')
 
     ds_dang_ky = relationship('DangKy', backref='lop_hoc_phan', lazy=True)
 
@@ -114,9 +117,9 @@ if __name__ == '__main__':
         hk1 = HocKy(name="Học kỳ 1 - 2026", ngay_bat_dau=date(2026, 9, 5), han_dang_ky=datetime(2026, 9, 20, 23, 59))
         db.session.add(hk1)
         # 5. TẠO LỚP HỌC PHẦN MẪU
-        lhp1 = LopHocPhan(mon_hoc_id=mh1.id, hoc_ky_id=hk1.id, phong_hoc="Phòng A101", thu=2, ca_hoc=1, so_luong_max=40)
-        lhp2 = LopHocPhan(mon_hoc_id=mh2.id, hoc_ky_id=hk1.id, phong_hoc="Phòng B205", thu=4, ca_hoc=3, so_luong_max=50)
-        lhp3 = LopHocPhan(mon_hoc_id=mh3.id, hoc_ky_id=hk1.id, phong_hoc="Phòng C301", thu=6, ca_hoc=2, so_luong_max=30)
+        lhp1 = LopHocPhan(mon_hoc_id=mh1.id, hoc_ky_id=hk1.id, phong_hoc="A101", thu=2, ca_hoc=1, so_luong_max=40)
+        lhp2 = LopHocPhan(mon_hoc_id=mh2.id, hoc_ky_id=hk1.id, phong_hoc="B205", thu=4, ca_hoc=3, so_luong_max=50)
+        lhp3 = LopHocPhan(mon_hoc_id=mh3.id, hoc_ky_id=hk1.id, phong_hoc="C301", thu=6, ca_hoc=2, so_luong_max=30)
 
         db.session.add_all([lhp1, lhp2, lhp3])
         db.session.commit()
