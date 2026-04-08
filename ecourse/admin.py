@@ -17,9 +17,6 @@ class MyAdminIndexView(AdminIndexView):
     def index(self):
         return self.render('admin/index.html', mon_hoc_stats = dao.count_lop_by_mon_hoc())
 
-    # def is_accessible(self):
-    #     return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
-
 class LogoutView(BaseView):
     @expose('/')
     def index(self):
@@ -28,10 +25,6 @@ class LogoutView(BaseView):
 
     def is_accessible(self) -> bool:
         return current_user.is_authenticated
-
-class ProductView(AdminView):
-    can_export = True
-    column_searchable_list = ['name']
 
 class LopHocPhanView(AdminView):
     column_list = ['id','mon_hoc','so_luong_max', 'phong_hoc', 'ca_hoc', 'thu']
@@ -62,7 +55,6 @@ class LopHocPhanView(AdminView):
             flash(str(exc), 'error')
             return True
 
-            # Nếu là lỗi khác (như lỗi SQL) thì cứ để hệ thống tự lo
         return super(LopHocPhanView, self).handle_view_exception(exc)
     def delete_model(self, model):
         sv_dang__ky = DangKy.query.filter_by(lop_hoc_phan_id = model.id).count()
