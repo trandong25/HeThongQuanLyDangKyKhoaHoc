@@ -2,10 +2,12 @@ from flask_admin import Admin, AdminIndexView
 from flask_login import current_user, logout_user
 from ecourse import app, dao
 from flask_admin.contrib.sqla import ModelView
+
+from ecourse.dao import count_lop_by_mon_hoc
 from ecourse.models import MonHoc, LopHocPhan, UserRole, DangKy
 from ecourse import db
 from flask_admin import BaseView,expose
-from flask import redirect, flash
+from flask import redirect, flash, url_for, request
 
 
 class AdminView(ModelView):
@@ -15,8 +17,13 @@ class AdminView(ModelView):
 class MyAdminIndexView(AdminIndexView):
     @expose('/')
     def index(self):
-        return self.render('admin/index.html', mon_hoc_stats = dao.count_lop_by_mon_hoc())
+        if not current_user.is_authenticated:
+            return super(MyAdminIndexView, self).index()
 
+        if current_user.user_role != UserRole.ADMIN:
+            return redirect('/')
+
+        return self.render('admin/index.html', mon_hoc_stats=count_lop_by_mon_hoc())
 class LogoutView(BaseView):
     @expose('/')
     def index(self):
