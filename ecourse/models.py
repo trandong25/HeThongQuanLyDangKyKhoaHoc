@@ -1,3 +1,5 @@
+import random
+
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum, Date
 from sqlalchemy.orm import relationship
@@ -96,35 +98,55 @@ if __name__ == '__main__':
             password=hashlib.md5("123456".encode('utf-8')).hexdigest(),
             user_role=UserRole.ADMIN
         )
-        # Commit User trước để lấy ID
         db.session.add_all([user1, admin1])
         db.session.commit()
 
-        # 3. TẠO MÔN HỌC MẪU
-        mh1 = MonHoc(name="Lập trình Python", so_tin_chi=3)
-        mh2 = MonHoc(name="Cấu trúc dữ liệu", so_tin_chi=4)
-        db.session.add_all([mh1, mh2])
-        db.session.commit()
-        # Thử nghiệm 1 môn có tiên quyết (AI cần học trước Python)
-        mh3 = MonHoc(name="Trí tuệ nhân tạo", so_tin_chi=3, mon_tien_quyet_id=mh1.id)
-        db.session.add(mh3)
-        db.session.commit()
-
-        # 4. TẠO HỌC KỲ MẪU
+        # 3. TẠO HỌC KỲ MẪU
         hk1 = HocKy(name="Học kỳ 1 - 2026", ngay_bat_dau=date(2026, 9, 5), han_dang_ky=datetime(2026, 9, 20, 23, 59))
         db.session.add(hk1)
-        # 5. TẠO LỚP HỌC PHẦN MẪU
-        lhp1 = LopHocPhan(mon_hoc_id=mh1.id, hoc_ky_id=hk1.id, phong_hoc="Phòng A101", thu=2, ca_hoc=1, so_luong_max=40)
-        lhp2 = LopHocPhan(mon_hoc_id=mh2.id, hoc_ky_id=hk1.id, phong_hoc="Phòng B205", thu=4, ca_hoc=3, so_luong_max=50)
-        lhp3 = LopHocPhan(mon_hoc_id=mh3.id, hoc_ky_id=hk1.id, phong_hoc="Phòng C301", thu=6, ca_hoc=2, so_luong_max=30)
-
-        db.session.add_all([lhp1, lhp2, lhp3])
         db.session.commit()
 
-        # 6. TẠO DỮ LIỆU ĐĂNG KÝ (Mock data để test trang /history)
-        # Cho student1 đăng ký môn Python và Cấu trúc dữ liệu
-        dk1 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=lhp1.id)
-        dk2 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=lhp2.id)
+        # 4. DANH SÁCH 30 MÔN HỌC CNTT
+        danh_sach_ten_mon = [
+            "Lập trình Python", "Cấu trúc dữ liệu", "Trí tuệ nhân tạo", "Cơ sở dữ liệu",
+            "Mạng máy tính", "Hệ điều hành", "Toán rời rạc", "Giải tích 1", "Giải tích 2",
+            "Vật lý 1", "Vật lý 2", "Triết học Mác-Lênin", "Kỹ năng mềm", "Tiếng Anh 1",
+            "Tiếng Anh 2", "Phát triển Web", "Phát triển Mobile", "Kiến trúc máy tính",
+            "An toàn thông tin", "Khai phá dữ liệu", "Học máy", "Đồ họa máy tính",
+            "Thiết kế UI/UX", "Kiểm thử phần mềm", "Quản trị dự án CNTT", "Thương mại điện tử",
+            "Điện toán đám mây", "Lập trình Java", "Phân tích thiết kế hệ thống", "Xác suất thống kê"
+        ]
 
+        danh_sach_phong = ["A101", "A102", "A205", "B104", "B201", "C302", "C405", "D101", "D202"]
+
+        # 5. TẠO 30 MÔN HỌC VÀ 30 LỚP HỌC PHẦN TỰ ĐỘNG
+        tat_ca_lop_hoc = []  # Lưu lại danh sách lớp để test phần Đăng ký
+
+        for ten_mon in danh_sach_ten_mon:
+            # Tạo môn học (số tín chỉ ngẫu nhiên từ 2 đến 4)
+            mh = MonHoc(name=ten_mon, so_tin_chi=random.randint(2, 4))
+            db.session.add(mh)
+            db.session.commit()  # Cần commit ngay để database sinh ra mh.id
+
+            # Tạo lớp học phần tương ứng cho môn đó
+            lhp = LopHocPhan(
+                mon_hoc_id=mh.id,
+                hoc_ky_id=hk1.id,
+                phong_hoc=f"Phòng {random.choice(danh_sach_phong)}",
+                thu=random.randint(2, 7),  # Xếp lịch ngẫu nhiên từ Thứ 2 đến Thứ 7
+                ca_hoc=random.randint(1, 4),  # Xếp ngẫu nhiên từ Ca 1 đến Ca 4
+                so_luong_max=random.choice([30, 40, 50, 60])
+            )
+            db.session.add(lhp)
+            tat_ca_lop_hoc.append(lhp)
+
+        db.session.commit()
+
+        # 6. TẠO DỮ LIỆU ĐĂNG KÝ (Mock data)
+        # Lấy 2 lớp đầu tiên trong danh sách vừa tạo để cho student1 đăng ký thử
+        dk1 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=tat_ca_lop_hoc[0].id)
+        dk2 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=tat_ca_lop_hoc[1].id)
         db.session.add_all([dk1, dk2])
-        print("Đã chạy xong dữ liệu giả!")
+        db.session.commit()
+
+        print("Đã tạo thành công 30 môn học và dữ liệu giả!")

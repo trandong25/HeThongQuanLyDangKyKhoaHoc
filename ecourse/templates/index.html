@@ -1,33 +1,135 @@
 {%extends 'layout/base.html'%}
 {% block content %}
 
-<h2 class="text-center mb-4">Danh sách khóa học mới nhất</h2>
-<div class="row">
-    {% for c in classes %}
-    <div class="col-md-4 col-xs-12 mt-2">
-        <div class="card h-100 shadow-sm">
-            <img src="https://www.bing.com/th?id=OADD2.7353118511174_1NNLCPIUNKM5HOYTCG&pid=21.2&c=17&roil=0.0216&roit=0.1032&roir=0.9766&roib=0.8482&w=300&h=157&dynsize=1&qlt=90&dpr=2.00"
-                 class="card-img-top" alt="{{ c.name }}">
+<div class="container-fluid mt-4 mb-4">
+    <div class="p-4 text-center rounded-3 shadow-sm border border-primary border-1" style="background-color: #e3f2fd;">
+        <h2 class="text-success fw-bold">ĐĂNG KÝ HỌC PHẦN HỌC KỲ I (2026 - 2027)</h2>
+        <p class="fs-5 text-muted mb-2">Cổng đăng ký mở từ
+            <strong>08:00 ngày 10/04/2026</strong> đến
+            <strong>17:00 ngày 15/04/2026</strong>
+        </p>
+        <div class="alert alert-warning d-inline-block py-2 px-4 mb-0">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Lưu ý:</strong> Theo quy chế, sinh viên phải đăng ký tối thiểu <strong>12 tín chỉ</strong> trong học
+            kỳ chính.
+        </div>
+    </div>
+</div>
 
-            <div class="card-body">
-                <h4 class="card-title text-primary">{{ c.mon_hoc.name }}</h4>
+<h2 class="text-center mb-4">DANH SÁCH CÁC LỚP HỌC ĐANG MỞ</h2>
+<!--<div class="row">-->
+<!--    {% for c in classes %}-->
+<!--    <div class="col-md-4 col-xs-12 mt-2">-->
+<!--        <div class="card h-100 shadow-sm">-->
+<!--            <img src="https://www.bing.com/th?id=OADD2.7353118511174_1NNLCPIUNKM5HOYTCG&pid=21.2&c=17&roil=0.0216&roit=0.1032&roir=0.9766&roib=0.8482&w=300&h=157&dynsize=1&qlt=90&dpr=2.00"-->
+<!--                 class="card-img-top" alt="{{ c.name }}">-->
 
-                <p class="card-text mb-1">
-                    <strong>Phòng:</strong> {{ c.phong_hoc }} <br>
-                    <strongviet>Thứ:</strongviet> {{ c.thu }} | <strong>Ca:</strong> {{ c.ca_hoc }} <br>
-                    <strong>Sĩ số:</strong> 0 / {{ c.so_luong_max }}
-                </p>
-            </div>
+<!--            <div class="card-body">-->
+<!--                <h4 class="card-title text-primary">{{ c.mon_hoc.name }}</h4>-->
 
-            <div class="card-footer bg-white border-0">
-                {% if current_user.is_authenticated %}
-                <button onclick="dangKyMonHoc({{c.id}})" class="btn btn-primary w-100">Đăng ký ngay</button>
-                {% else %}
-                <a href="/login" class="btn btn-secondary w-100">Đăng nhập để ĐK</a>
-                {% endif %}
+<!--                <p class="card-text mb-1">-->
+<!--                    <strong>Phòng:</strong> {{ c.phong_hoc }} <br>-->
+<!--                    <strongviet>Thứ:</strongviet> {{ c.thu }} | <strong>Ca:</strong> {{ c.ca_hoc }} <br>-->
+<!--                    <strong>Sĩ số:</strong> 0 / {{ c.so_luong_max }}-->
+<!--                </p>-->
+<!--            </div>-->
+
+<!--            <div class="card-footer bg-white border-0">-->
+<!--                {% if current_user.is_authenticated %}-->
+<!--                <button onclick="dangKyMonHoc({{c.id}})" class="btn btn-primary w-100">Đăng ký ngay</button>-->
+<!--                {% else %}-->
+<!--                <a href="/login" class="btn btn-secondary w-100">Đăng nhập để ĐK</a>-->
+<!--                {% endif %}-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    {% endfor %}-->
+<!--</div>-->
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="table-responsive shadow-sm rounded">
+                <table class="table table-sm able-hover table-bordered align-middle mb-0">
+                    <thead class="table-dark">
+                    <tr class="text-center">
+                        <th>Mã MH</th>
+                        <th>Tên môn học</th>
+                        <th>Tín chỉ</th>
+                        <th>Lịch học (Thứ - Ca)</th>
+                        <th>Phòng học</th>
+                        <th>Sĩ số</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for c in classes %}
+                    <tr class="text-center">
+                        <td><strong>{{ c.mon_hoc_id }}</strong></td>
+                        <td class="text-primary fw-bold">{{ c.mon_hoc.name }}</td>
+                        <td>{{ c.mon_hoc.so_tin_chi }}</td>
+                        <td>Thứ {{ c.thu }} | Ca {{ c.ca_hoc }}</td>
+                        <td>{{ c.phong_hoc }}</td>
+                        <td>
+                            <span class="badge bg-success">{{ c.ds_dang_ky|length }} / {{ c.so_luong_max }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if current_user.is_authenticated %}
+
+    {# 1. ĐÃ ĐĂNG KÝ TRONG DB #}
+    {% if c.id in registered_ids %}
+    <button class="btn btn-sm btn-primary fw-bold px-3 disabled" disabled>
+        Đã đăng ký lớp học
+    </button>
+
+    {# 2. LỚP ĐẦY #}
+    {% elif c.ds_dang_ky|length >= c.so_luong_max %}
+    <button class="btn btn-sm btn-secondary fw-bold px-3 disabled" disabled>
+        Hết chỗ
+    </button>
+
+    {# 3. TRONG GIỎ TẠM #}
+    {% elif session.get('cart') and c.id|string in session.get('cart') %}
+    <button class="btn btn-sm btn-success fw-bold px-3 disabled" disabled>
+        Đã ghi danh
+    </button>
+
+    {# 4. CHƯA GÌ HẾT #}
+    {% else %}
+    <button class="btn btn-sm btn-outline-success fw-bold px-3"
+            onclick="chonMonHoc({{ c.id }}, '{{ c.mon_hoc.name }}', {{ c.mon_hoc.so_tin_chi }}, '{{ c.thu }}', '{{ c.ca_hoc }}', '{{ c.phong_hoc }}', this)">
+        Ghi danh
+    </button>
+    {% endif %}
+
+{% else %}
+<button class="btn btn-sm btn-outline-success fw-bold px-3" onclick="yeuCauDangNhap()">
+    Ghi danh
+</button>
+{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-    {% endfor %}
+    {%if pages>1%}
+    <div class="d-flex justify-content-center">
+        <ul class="pagination mt-3 ">
+            {%for i in range(1, (pages+1))%}
+
+            <li class="page-item {% if i == current_page %}active{% endif %}">
+                <a class="page-link {% if i == current_page %}bg-success border-success text-white fw-bold{% endif %}"
+                   href="/?page={{i}}">
+                    {{i}}
+                </a>
+            </li>
+
+            {%endfor%}
+        </ul>
+    </div>
+    {%endif%}
 </div>
+
 {% endblock %}

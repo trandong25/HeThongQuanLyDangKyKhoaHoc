@@ -42,7 +42,8 @@ def count_lop_hoc_phan(hk_id = None, kw = None):
 
 def get_user_by_id(user_id):
     return User.query.get(user_id)
-
+def get_user_by_username(username):
+    return User.query.filter(User.username == username).first()
 
 def dang_ky_lop(lop_hoc_phan_id):
     #Ràng buộc cho sinh viên phải đăng nhập để đăng ký
@@ -124,8 +125,6 @@ def dang_ky_lop(lop_hoc_phan_id):
         raise  e
 
 
-def get_classes():
-    return LopHocPhan.query.all()
 
 def get_registered_classes(user_id):
     return DangKy.query.filter(DangKy.sinh_vien_id == user_id).all()
