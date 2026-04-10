@@ -1,48 +1,79 @@
-<nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+<nav class="navbar navbar-expand-sm navbar-dark bg-dark sticky-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">TRANG CHỦ</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="mynavbar">
-            <ul class="navbar-nav me-auto">
+
+            <ul class="navbar-nav ">
                 <li class="nav-item">
-                    <a class="nav-link" href="javascript:void(0)">WEB COURSES</a>
+                    <a class="nav-link" href="javascript:void(0)">CHƯƠNG TRÌNH ĐÀO TẠO</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="javascript:void(0)">AI COURSES</a>
+                    <a class="nav-link" href="javascript:void(0)">HƯỚNG DẪN ĐĂNG KÝ</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="javascript:void(0)">MOBILE COURSES</a>
+                    <a class="nav-link" href="javascript:void(0)">TIN TỨC</a>
                 </li>
             </ul>
-
-            {% if current_user.is_authenticated%}
-            <div class="d-flex m-2">
-                <a class="nav-link active" href="/login">
-                    <img src="{{current_user.avatar}}" width="25">
-                    Chào {{current_user.name}}!
-                </a>
-            </div>
-            <div class="d-flex m-2">
-                <a href="/logout" class="btn btn-outline-light">Đăng xuất</a>
-            </div>
-            <div class="d-flex m-2">
-                <a href="/history" class="btn btn-outline-light">Lịch sử đăng ký môn học</a>
-            </div>
-            {% else %}
-            <div class="d-flex m-2">
-                <a href="/login" class="btn btn-outline-light">Đăng nhập</a>
-            </div>
-            <div class="d-flex m-2">
-                <a href="/register" class="btn btn-outline-light">Đăng ký</a>
-            </div>
-            {% endif %}
-
-            <form class="d-flex">
-                <input class="form-control me-2" type="text" placeholder="Search">
-                <button class="btn btn-primary" type="button">Search</button>
+            <form class="d-flex m-2" method="get">
+                <input class="form-control me-2" type="text" placeholder="Tìm kiếm ..." style="width: 400px" name="kw">
+                <button class="btn btn-primary" type="button">Tìm kiếm</button>
             </form>
+            <div class="d-flex align-items-center ms-auto">
+
+                {% if current_user.is_authenticated%}
+                <div class="nav-item dropdown ms-3">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center text-white text-decoration-none"
+                       href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="{{ current_user.avatar }}" width="35" height="35"
+                             class="rounded-circle me-2 shadow-sm"
+                             style="object-fit: cover; border: 2px solid #e3f2fd;">
+                        <span class="fw-bold">{{ current_user.name }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow mt-2" aria-labelledby="userDropdown"
+                        style="border-radius: 12px; border: none;">
+                        <li>
+                            <a class="dropdown-item py-2" href="/user_information">
+                                <i class="fas fa-user-circle text-primary me-2"></i>Thông tin người học
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item py-2" href="/class_register">
+                                <i class="fas fa-clipboard-list text-success me-2"></i>Đăng ký môn học
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="/timetable">
+                                <i class="fas fa-clipboard-list text-success me-2"></i>Thời khóa biểu
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 text-danger fw-bold" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
+
+
+
+                {% else %}
+                <div class="d-flex m-2">
+                    <a href="/login" class="btn btn-outline-light">Đăng nhập</a>
+                </div>
+                <div class="d-flex m-2">
+                    <a href="/register" class="btn btn-outline-light">Đăng ký</a>
+                </div>
+                {% endif %}
+            </div>
+
 
         </div>
     </div>
