@@ -73,22 +73,46 @@ def register_route(app):
         cart = session.get('cart', {})
         data = request.json
 
-        id = str(data.get('id'))
+        new_id = str(data.get('id'))
+        new_name = data.get('name')
+        new_thu = str(data.get('thu'))
+        new_ca = str(data.get('ca_hoc'))
 
-        if id not in cart:
-            cart[id] = {
-                "id": id,
-                "name": data.get('name'),
-                "tin_chi": data.get('tin_chi'),
-                "thu": data.get('thu'),             # Bổ sung dòng này
-                "ca_hoc": data.get('ca_hoc'),       # Bổ sung dòng này
-                "phong_hoc": data.get('phong_hoc')
-                }
-            session['cart'] = cart
-            # Trả về JSON cho Javascript đọc
-            return jsonify({'status': 200, 'message': 'Đã thêm vào danh sách chờ'})
-        else:
-            return jsonify({'status': 400, 'err_msg': 'Môn này đã được chọn rồi!'})
+
+        if new_id in cart:
+            return jsonify({'status': 400, 'err_msg': 'Môn này đã có trong giỏ hàng!'})
+
+
+        for item in cart.values():
+            if str(item['thu']) == new_thu and str(item['ca_hoc']) == new_ca:
+                return jsonify({
+                    'status': 400,
+                    'err_msg': f'Trùng lịch! Thứ {new_thu} - Ca {new_ca} bạn đã chọn môn {item["name"]}.'
+                })
+
+
+        ds_da_dang_ky = DangKy.query.filter_by(sinh_vien_id=current_user.id).all()
+        for dk in ds_da_dang_ky:
+            lop_da_dk = dk.lop_hoc_phan
+
+            if str(lop_da_dk.thu) == new_thu and str(lop_da_dk.ca_hoc) == new_ca:
+                return jsonify({
+                    'status': 400,
+                    'err_msg': f'Trùng lịch! Thứ {new_thu} - Ca {new_ca} bạn đã có Lịch học môn {lop_da_dk.mon_hoc.name}.'
+                })
+
+
+        cart[new_id] = {
+            "id": new_id,
+            "name": new_name,
+            "tin_chi": data.get('tin_chi'),
+            "thu": new_thu,
+            "ca_hoc": new_ca,
+            "phong_hoc": data.get('phong_hoc')
+        }
+        session['cart'] = cart
+
+        return jsonify({'status': 200, 'message': 'Đã thêm vào danh sách chờ'})
 
     @app.route("/api/xoa-mon-tam/<id>", methods=['DELETE'])
     @login_required
@@ -117,36 +141,29 @@ def register_route(app):
         return render_template('timetable.html', lop_da_xac_nhan=lop_da_xac_nhan)
 
 
-    @app.route('/checkout', methods=['POST'])
+    @app.route('/api/checkout', methods=['POST'])
     @login_required
     def checkout():
         cart = session.get('cart', {})
         if not cart:
-
-            return redirect('/class_register')
-
+            return jsonify({'status': 400, 'message': 'Giỏ hàng đang trống!'})
         lop_cho = list(cart.values())
         tong_tc = sum(int(item['tin_chi']) for item in lop_cho)
-
         if tong_tc < 12:
-            return redirect('/class_register')
-
-        # XÁC NHẬN: Ghi vào Database
-        for item in lop_cho:
-            lop_id = int(item['id'])
-            # Kiểm tra xem đã tồn tại trong DB chưa để tránh lỗi trùng lặp
-            exist = DangKy.query.filter_by(sinh_vien_id=current_user.id, lop_hoc_phan_id=lop_id).first()
-            if not exist:
-                dk = DangKy(sinh_vien_id=current_user.id, lop_hoc_phan_id=lop_id)
-                db.session.add(dk)
-
-        db.session.commit()
-
-        # Xóa sạch giỏ hàng sau khi đã chốt đơn thành công
-        session.pop('cart', None)
-
-
-        return redirect('/timetable')
+            return jsonify({'status': 400, 'message': 'Bạn chưa chọn đủ 12 tín chỉ!'})
+        try:
+            for item in lop_cho:
+                lop_id = int(item['id'])
+                exist = DangKy.query.filter_by(sinh_vien_id=current_user.id, lop_hoc_phan_id=lop_id).first()
+                if not exist:
+                    dk = DangKy(sinh_vien_id=current_user.id, lop_hoc_phan_id=lop_id)
+                    db.session.add(dk)
+            db.session.commit()
+            session.pop('cart', None)  # Xóa giỏ hàng
+            return jsonify({'status': 200, 'message': 'Xác nhận nhập học thành công!'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 500, 'message': 'Lỗi hệ thống: ' + str(e)})
 
 
     @app.route("/register", methods=["GET", "POST"])

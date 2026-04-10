@@ -79,6 +79,30 @@ function xoaMonHoc(id) {
         });
     }
 }
+function checkOut() {
+    fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 200) {
+
+            alert(data.message);
+            location.reload();
+
+        } else {
+
+            alert(data.message);
+
+        }
+    })
+    .catch(error => {
+        console.error("Lỗi:", error);
+        alert("Lỗi kết nối đến máy chủ!");
+
+    });
+}
 function yeuCauDangNhap(){
     alert("Yêu cầu đăng nhập hệ thống để ghi danh !!!")
 }
