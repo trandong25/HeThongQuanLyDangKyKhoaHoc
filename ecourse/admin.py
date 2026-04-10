@@ -2,7 +2,7 @@ from flask_admin import Admin, AdminIndexView
 from flask_login import current_user, logout_user
 from ecourse import app, dao
 from flask_admin.contrib.sqla import ModelView
-
+from wtforms.validators import ValidationError
 from ecourse.dao import count_lop_by_mon_hoc
 from ecourse.models import MonHoc, LopHocPhan, UserRole, DangKy
 from ecourse import db
@@ -42,20 +42,27 @@ class LopHocPhanView(AdminView):
         if model.so_luong_max > 50:
             raise ValueError("Số lượng sinh viên tối đa là 50")
 
+        phong_chuan = model.phong_hoc.strip().upper() if model.phong_hoc else ""
+        model.phong_hoc = phong_chuan
+
+        thu_hien_tai = int(model.thu)
+        ca_hien_tai = int(model.ca_hoc)
         hk_id_hien_tai = model.hoc_ky.id if model.hoc_ky else model.hoc_ky_id
-        query = LopHocPhan.query.filter(
-            LopHocPhan.hoc_ky_id == hk_id_hien_tai,
-            LopHocPhan.phong_hoc == model.phong_hoc,
-            LopHocPhan.thu == model.thu,
-            LopHocPhan.ca_hoc == model.ca_hoc
-        )
 
-        if model.id:
-            query = query.filter(LopHocPhan.id != model.id)
+        with db.session.no_autoflush:
+            query = LopHocPhan.query.filter(
+                LopHocPhan.hoc_ky_id == hk_id_hien_tai,
+                LopHocPhan.phong_hoc == phong_chuan,
+                LopHocPhan.thu == thu_hien_tai,
+                LopHocPhan.ca_hoc == ca_hien_tai
+            )
 
-        lop_trung = query.first()
-        if lop_trung and lop_trung is not model:
-            raise ValueError(f'Phòng {model.phong_hoc} đã có lớp id {lop_trung.id}')
+            if not is_created:
+                query = query.filter(LopHocPhan.id != model.id)
+
+            lop_trung = query.first()
+            if lop_trung and lop_trung is not model:
+                raise ValueError(f'Phòng {phong_chuan} đã có lớp id {lop_trung.id}')
 
     def handle_view_exception(self, exc):
         if isinstance(exc, ValueError):
