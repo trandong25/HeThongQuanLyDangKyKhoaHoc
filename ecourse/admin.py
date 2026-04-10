@@ -49,20 +49,20 @@ class LopHocPhanView(AdminView):
         ca_hien_tai = int(model.ca_hoc)
         hk_id_hien_tai = model.hoc_ky.id if model.hoc_ky else model.hoc_ky_id
 
-        # with db.session.no_autoflush:
-        query = LopHocPhan.query.filter(
-            LopHocPhan.hoc_ky_id == hk_id_hien_tai,
-            LopHocPhan.phong_hoc == phong_chuan,
-            LopHocPhan.thu == thu_hien_tai,
-            LopHocPhan.ca_hoc == ca_hien_tai
-        )
+        with db.session.no_autoflush:
+            query = LopHocPhan.query.filter(
+                LopHocPhan.hoc_ky_id == hk_id_hien_tai,
+                LopHocPhan.phong_hoc == phong_chuan,
+                LopHocPhan.thu == thu_hien_tai,
+                LopHocPhan.ca_hoc == ca_hien_tai
+            )
 
-        if not is_created:
-            query = query.filter(LopHocPhan.id != model.id)
+            if not is_created:
+                query = query.filter(LopHocPhan.id != model.id)
 
-        lop_trung = query.first()
-        if lop_trung and lop_trung is not model:
-            raise ValueError(f'Phòng {phong_chuan} đã có lớp id {lop_trung.id}')
+            lop_trung = query.first()
+            if lop_trung and lop_trung is not model:
+                raise ValueError(f'Phòng {phong_chuan} đã có lớp id {lop_trung.id}')
 
     def handle_view_exception(self, exc):
         if isinstance(exc, ValueError):

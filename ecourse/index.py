@@ -1,5 +1,4 @@
 import math
-
 import cloudinary.uploader
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import redirect
@@ -34,7 +33,7 @@ def register_route(app):
                 next = request.args.get("next")
                 return redirect(next if next else "/")
             else:
-                error_msg = "Login Unsuccessful. Please check username and password"
+                error_msg = "Đăng nhập không thành công. Vui lòng kểm tra lại username và mật khẩu"
 
         return render_template("login.html", error_msg=error_msg)
 
@@ -56,7 +55,7 @@ def register_route(app):
         new_ca = str(data.get('ca_hoc'))
 
         if new_id in cart:
-            return jsonify({'status': 400, 'err_msg': 'Môn này đã có trong giỏ hàng!'})
+            return jsonify({'status': 400, 'err_msg': 'Môn này đã có trong danh sách!'})
 
         for item in cart.values():
             if str(item['thu']) == new_thu and str(item['ca_hoc']) == new_ca:
@@ -72,7 +71,7 @@ def register_route(app):
             if str(lop_da_dk.thu) == new_thu and str(lop_da_dk.ca_hoc) == new_ca:
                 return jsonify({
                     'status': 400,
-                    'err_msg': f'Trùng lịch! Thứ {new_thu} - Ca {new_ca} bạn đã có Lịch học môn {lop_da_dk.mon_hoc.name}.'
+                    'err_msg': f'Trùng lịch! Thứ {new_thu} - Ca {new_ca} bạn đã có lịch học môn {lop_da_dk.mon_hoc.name}.'
                 })
 
         cart[new_id] = {
@@ -92,10 +91,10 @@ def register_route(app):
     def api_xoa_mon_tam(id):
         cart = session.get('cart', {})
         if id in cart:
-            del cart[id]  # Xóa khỏi Giỏ hàng
+            del cart[id]
             session['cart'] = cart
             return jsonify({'status': 200, 'message': 'Đã xóa thành công'})
-        return jsonify({'status': 400, 'err_msg': 'Môn học không tồn tại trong giỏ'})
+        return jsonify({'status': 400, 'err_msg': 'Môn học không tồn tại trong danh sách'})
 
     @app.route("/class_register")
     @login_required
@@ -122,7 +121,7 @@ def register_route(app):
     def checkout():
         cart = session.get('cart', {})
         if not cart:
-            return jsonify({'status': 400, 'message': 'Giỏ hàng đang trống!'})
+            return jsonify({'status': 400, 'message': 'Danh sách đang trống!'})
         lop_cho = list(cart.values())
         tong_tc = sum(int(item['tin_chi']) for item in lop_cho)
 
@@ -146,7 +145,7 @@ def register_route(app):
                 loi_str = "\n".join(ds_loi)
                 return jsonify({
                     'status': 400,
-                    'message': f'Xác nhận THẤT BẠI do vi phạm ràng buộc:\n{loi_str}'
+                    'message': f'Xác nhận thất bại do vi phạm ràng buộc:\n{loi_str}'
                 })
             else:
                 db.session.commit()

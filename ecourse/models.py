@@ -81,12 +81,12 @@ class DangKy(BaseModel):
 
 if __name__ == '__main__':
     with app.app_context():
-        # 1. Đập đi xây lại: Xóa toàn bộ dữ liệu cũ và tạo bảng mới
+        # 1 Xóa toàn bộ dữ liệu cũ và tạo bảng mới
         db.drop_all()
         db.create_all()
         print("Đã làm sạch Database...")
 
-        # 2. TẠO USER VÀ ADMIN MẪU
+        # 2 Tạo user và admin
         user1 = User(
             name="Nguyễn Văn Sinh Viên",
             username="student1",
@@ -102,12 +102,12 @@ if __name__ == '__main__':
         db.session.add_all([user1, admin1])
         db.session.commit()
 
-        # 3. TẠO HỌC KỲ MẪU
+        # 3 Tạo học kì
         hk1 = HocKy(name="Học kỳ 1 - 2026", ngay_bat_dau=date(2026, 9, 5), han_dang_ky=datetime(2026, 9, 20, 23, 59))
         db.session.add(hk1)
         db.session.commit()
 
-        # 4. DANH SÁCH 30 MÔN HỌC CNTT
+        # 4. Danh sách các môn
         danh_sach_ten_mon = [
             "Lập trình Python", "Cấu trúc dữ liệu", "Trí tuệ nhân tạo", "Cơ sở dữ liệu",
             "Mạng máy tính", "Hệ điều hành", "Toán rời rạc", "Giải tích 1", "Giải tích 2",
@@ -120,31 +120,29 @@ if __name__ == '__main__':
 
         danh_sach_phong = ["A101", "A102", "A205", "B104", "B201", "C302", "C405", "D101", "D202"]
 
-        # 5. TẠO 30 MÔN HỌC VÀ 30 LỚP HỌC PHẦN TỰ ĐỘNG
-        tat_ca_lop_hoc = []  # Lưu lại danh sách lớp để test phần Đăng ký
+        # 5. tạo môn học và lớp học phần
+        tat_ca_lop_hoc = []
 
         for ten_mon in danh_sach_ten_mon:
-            # Tạo môn học (số tín chỉ ngẫu nhiên từ 2 đến 4)
+            # Tạo môn học tín chỉ từ 2 đến 4
             mh = MonHoc(name=ten_mon, so_tin_chi=random.randint(2, 4))
             db.session.add(mh)
-            db.session.commit()  # Cần commit ngay để database sinh ra mh.id
+            db.session.commit()
 
-            # Tạo lớp học phần tương ứng cho môn đó
             lhp = LopHocPhan(
                 mon_hoc_id=mh.id,
                 hoc_ky_id=hk1.id,
                 phong_hoc=f"{random.choice(danh_sach_phong)}",
-                thu=random.randint(2, 7),  # Xếp lịch ngẫu nhiên từ Thứ 2 đến Thứ 7
-                ca_hoc=random.randint(1, 4),  # Xếp ngẫu nhiên từ Ca 1 đến Ca 4
-                so_luong_max=random.choice([30, 40, 50, 60])
+                thu=random.randint(2, 7),
+                ca_hoc=random.randint(1, 4),
+                so_luong_max=random.choice([30, 40, 50])
             )
             db.session.add(lhp)
             tat_ca_lop_hoc.append(lhp)
 
         db.session.commit()
 
-        # 6. TẠO DỮ LIỆU ĐĂNG KÝ (Mock data)
-        # Lấy 2 lớp đầu tiên trong danh sách vừa tạo để cho student1 đăng ký thử
+        # 6. TẠO DỮ LIỆU ĐĂNG KÝ
         dk1 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=tat_ca_lop_hoc[0].id)
         dk2 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=tat_ca_lop_hoc[1].id)
         db.session.add_all([dk1, dk2])
