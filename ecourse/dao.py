@@ -5,6 +5,7 @@ from flask import current_app
 import hashlib
 from flask_login import current_user
 from datetime import datetime
+from sqlalchemy import func
 
 def load_courses():
     return MonHoc.query.all()
@@ -96,6 +97,9 @@ def dang_ky_lop(lop_hoc_phan_id):
         lhp_da_dk = phieu.lop_hoc_phan
         mh_da_dk = lhp_da_dk.mon_hoc
 
+        if mh_da_dk.id == mon_hoc.id:
+            raise ValueError(f"Bạn đã đăng ký lớp {lhp_da_dk.id} của môn {mh_da_dk.name} trong học kỳ này rồi!")
+
         #Ràng buộc không được đăng ký trùng lịch học cùng thứ, cùng ca
         if lhp_da_dk.thu == lop.thu and lhp_da_dk.ca_hoc == lop.ca_hoc:
             raise ValueError(f"Trùng lịch học với lớp {mh_da_dk.name} (Thứ {lhp_da_dk.thu}, Ca {lhp_da_dk.ca_hoc})")
@@ -139,3 +143,14 @@ def add_user(name,username,password,avatar):
     db.session.add(u)
     db.session.commit()
     return u
+
+
+def count_lop_by_mon_hoc():
+    return db.session.query(MonHoc.id, MonHoc.name, func.count(LopHocPhan.id)
+    ).join(LopHocPhan, LopHocPhan.mon_hoc_id == MonHoc.id,isouter=True
+    ).group_by(MonHoc.id, MonHoc.name).all()
+
+def count_sv_by_lop():
+    return (db.session.query(LopHocPhan.id, MonHoc.name,func.count(DangKy.sinh_vien_id)).join(MonHoc, MonHoc.id == LopHocPhan.mon_hoc_id)
+            .join(DangKy, DangKy.lop_hoc_phan_id == LopHocPhan.id, isouter=True)
+            .group_by(LopHocPhan.id, MonHoc.name).all())

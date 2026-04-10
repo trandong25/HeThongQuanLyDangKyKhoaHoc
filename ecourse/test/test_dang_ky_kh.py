@@ -173,3 +173,18 @@ def test_dang_ky_vuot_25_tin_chi_fail(test_session, sample_lop_hoc_phan, mock_lo
 
     with pytest.raises(ValueError, match="Bạn đã vượt quá 25 tín chỉ"):
         dang_ky_lop(l2.id)
+
+def test_dk_trung_mh(test_session,sample_lop_hoc_phan,mock_login_user):
+    l1 = sample_lop_hoc_phan[0]
+    dang_ky_lop(l1.id)
+
+    l2 = LopHocPhan(mon_hoc_id=l1.mon_hoc_id,
+        hoc_ky_id=l1.hoc_ky_id, so_luong_max=50, active=True,
+        phong_hoc="Z999", thu=7, ca_hoc=2
+    )
+
+    test_session.add(l2)
+    test_session.commit()
+
+    with pytest.raises(ValueError, match="Bạn đã đăng ký lớp"):
+        dang_ky_lop(l2.id)

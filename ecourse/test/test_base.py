@@ -1,6 +1,5 @@
 import pytest
 from flask import Flask
-
 from ecourse import db
 
 def create_app():

@@ -221,5 +221,6 @@ def load_user(user_id):
 
 
 if __name__== "__main__":
+    from ecourse import admin
     register_route(app=app)
     app.run(debug=True)

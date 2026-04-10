@@ -1,12 +1,10 @@
-import random
-
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum, Date
 from sqlalchemy.orm import relationship
 from datetime import datetime, date
 from ecourse import db, app
 from enum import Enum as UserEnum
-import hashlib
+import hashlib, random
 
 
 class BaseModel(db.Model):
@@ -42,7 +40,7 @@ class MonHoc(BaseModel):
     mon_tien_quyet = relationship('MonHoc', remote_side='MonHoc.id')
 
 
-    ds_lop_hoc_phan = relationship('LopHocPhan', backref='mon_hoc', lazy= True)
+    ds_lop_hoc_phan = relationship('LopHocPhan', back_populates='mon_hoc', lazy= True)
 
     def __str__(self):
         return self.name
@@ -52,7 +50,7 @@ class HocKy(BaseModel):
     ngay_bat_dau = Column(Date,nullable=False)
     han_dang_ky = Column(DateTime, nullable=False)
 
-    ds_lop_hoc_phan = relationship('LopHocPhan', backref='hoc_ky', lazy=True)
+    ds_lop_hoc_phan = relationship('LopHocPhan', back_populates='hoc_ky', lazy=True)
 
     def __str__(self):
         return self.name
@@ -66,6 +64,9 @@ class LopHocPhan(BaseModel):
     ca_hoc = Column(Integer, nullable=False)
     so_luong_max = Column(Integer, default=50)
     da_thi_giua_ky = Column(Boolean, default=False)
+
+    mon_hoc= relationship('MonHoc', back_populates='ds_lop_hoc_phan')
+    hoc_ky= relationship('HocKy', back_populates='ds_lop_hoc_phan')
 
     ds_dang_ky = relationship('DangKy', backref='lop_hoc_phan', lazy=True)
 
