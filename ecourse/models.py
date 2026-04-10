@@ -133,7 +133,7 @@ if __name__ == '__main__':
             lhp = LopHocPhan(
                 mon_hoc_id=mh.id,
                 hoc_ky_id=hk1.id,
-                phong_hoc=f"Phòng {random.choice(danh_sach_phong)}",
+                phong_hoc=f"{random.choice(danh_sach_phong)}",
                 thu=random.randint(2, 7),  # Xếp lịch ngẫu nhiên từ Thứ 2 đến Thứ 7
                 ca_hoc=random.randint(1, 4),  # Xếp ngẫu nhiên từ Ca 1 đến Ca 4
                 so_luong_max=random.choice([30, 40, 50, 60])

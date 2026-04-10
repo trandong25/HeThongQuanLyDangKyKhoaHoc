@@ -122,11 +122,7 @@ def dang_ky_lop(lop_hoc_phan_id):
     phieu_dang_ky = DangKy(sinh_vien_id = current_user.id, lop_hoc_phan_id = lop.id)
     db.session.add(phieu_dang_ky)
 
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        raise  e
+    db.session.flush()
 
 
 
