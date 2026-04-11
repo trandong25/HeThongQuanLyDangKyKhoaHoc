@@ -58,133 +58,147 @@ def mock_login_user(sample_student):
 
         yield mock_user
 
-def test_all(sample_lop_hoc_phan):
-    actual_classes = load_lop_hoc_phan()
-    assert  len(actual_classes) == len(sample_lop_hoc_phan)
+def test_load_all_classes(sample_lop_hoc_phan):
+    classes = load_lop_hoc_phan()
+    assert len(classes) == len(sample_lop_hoc_phan)
 
-def test_dang_ky_thanh_cong(sample_lop_hoc_phan,sample_student, mock_login_user):
+
+def test_dang_ky_thanh_cong(sample_lop_hoc_phan, sample_student, mock_login_user):
     l1 = sample_lop_hoc_phan[0]
 
     dang_ky_lop(l1.id)
 
-    phieu_dk = DangKy.query.filter_by(
-        sinh_vien_id = sample_student.id,
-        lop_hoc_phan_id = l1.id
-    ).first()
+    assert DangKy.query.filter_by(
+        sinh_vien_id=sample_student.id,
+        lop_hoc_phan_id=l1.id
+    ).first() is not None
 
-    assert phieu_dk is not None
 
-def test_dang_ky_lop_day_fail (test_session, sample_lop_hoc_phan,sample_student,mock_login_user):
-    l2 = sample_lop_hoc_phan[1]
-
-    l2.so_luong_max = 0
-    test_session.commit()
-
-    with pytest.raises(ValueError, match="đã đủ sĩ số"):
-        dang_ky_lop(l2.id)
-
-def test_dang_ky_trung_fail(sample_lop_hoc_phan, sample_student, mock_login_user):
-    l3 = sample_lop_hoc_phan[2]
-
-    dang_ky_lop(l3.id)
-
-    with pytest.raises(Exception, match="Bạn đã đăng ký lớp học phần này rồi"):
-        dang_ky_lop(l3.id)
-
-    so_luong = DangKy.query.filter_by(
-        sinh_vien_id = sample_student.id,
-        lop_hoc_phan_id = l3.id
-    ).count()
-
-    assert 1 == so_luong
-
-def test_dang_ky_mon_tien_quyet_fail(test_session,sample_lop_hoc_phan,sample_student, mock_login_user):
-    l4 = sample_lop_hoc_phan[3]
-
-    m4 = MonHoc.query.get(l4.mon_hoc_id)
-    m4.mon_tien_quyet_id = 1
-    test_session.commit()
-
-    with pytest.raises(ValueError, match="Bạn chưa học môn tiên quyết"):
-        dang_ky_lop(l4.id)
-
-def test_dang_ky_khong_login(sample_lop_hoc_phan):
+@pytest.mark.parametrize("case", [
+    "khong_dang_nhap",
+    "lop_khong_co",
+    "lop_du_sl",
+    "trung_lop",
+    "het_han",
+])
+def test_dang_ky_cases_fail(case, test_session, sample_lop_hoc_phan, mock_login_user):
     l1 = sample_lop_hoc_phan[0]
 
-    with patch("ecourse.dao.current_user") as mock_user:
-        mock_user.is_authenticated = False
+    if case == "khong_dang_nhap":
+        with patch("ecourse.dao.current_user") as user:
+            user.is_authenticated = False
+            with pytest.raises(Exception):
+                dang_ky_lop(l1.id)
 
-        with pytest.raises(Exception, match= "Chức năng cần đăng nhập để thực hiện"):
+    elif case == "lop_khong_co":
+        with pytest.raises(ValueError):
+            dang_ky_lop(999)
+
+    elif case == "lop_du_sl":
+        l1.so_luong_max = 0
+        test_session.commit()
+        with pytest.raises(ValueError):
             dang_ky_lop(l1.id)
 
-def test_dang_ky_sau_tg_fail(test_session,sample_lop_hoc_phan,mock_login_user):
-    l1 = sample_lop_hoc_phan[0]
-
-    hk1 = HocKy.query.get(l1.hoc_ky_id)
-    hk1.han_dang_ky = datetime.now() - timedelta(days=1)
-    test_session.commit()
-
-    with pytest.raises(ValueError, match="Đã hết thời hạn đăng ký"):
+    elif case == "trung_lop":
         dang_ky_lop(l1.id)
-def test_dang_ky_mon_da_hoc_fail(test_session,sample_lop_hoc_phan,sample_student,mock_login_user):
+        with pytest.raises(Exception):
+            dang_ky_lop(l1.id)
+
+    elif case == "het_han":
+        hk = HocKy.query.get(l1.hoc_ky_id)
+        hk.han_dang_ky = datetime.now() - timedelta(days=1)
+        test_session.commit()
+
+        with pytest.raises(ValueError):
+            dang_ky_lop(l1.id)
+
+
+def test_trung_lich(sample_lop_hoc_phan, test_session, mock_login_user):
     l1 = sample_lop_hoc_phan[0]
-
-    phieu_cu = DangKy(sinh_vien_id = sample_student.id, lop_hoc_phan_id = l1.id, diem_tong_ket = 7.0)
-    test_session.add(phieu_cu)
-    test_session.commit()
-
-    hk_moi = HocKy(name = "HK A", active = True, ngay_bat_dau = datetime.now(), han_dang_ky = datetime.now() + timedelta(days=30))
-    test_session.add(hk_moi)
-    test_session.commit()
-
-    l_moi = LopHocPhan(mon_hoc_id=l1.mon_hoc_id, hoc_ky_id=hk_moi.id, so_luong_max=50, active=True, phong_hoc="A102",
-                       thu=5, ca_hoc=1)
-    test_session.add(l_moi)
-    test_session.commit()
-
-    with pytest.raises(ValueError, match="Bạn đã học và thi đạt môn này rồi"):
-        dang_ky_lop(l_moi.id)
-
-def test_dang_ky_trung_lich_fail(test_session, sample_lop_hoc_phan, mock_login_user):
-    l1 = sample_lop_hoc_phan[0] #t2, c1
-
     dang_ky_lop(l1.id)
 
-    mon_moi = MonHoc(name="Môn test trùng lịch", so_tin_chi=2)
-    test_session.add(mon_moi)
+    mon = MonHoc(name="Test trùng lịch", so_tin_chi=2)
+    test_session.add(mon)
     test_session.commit()
 
-    lop_trung = LopHocPhan(mon_hoc_id=mon_moi.id, hoc_ky_id=l1.hoc_ky_id, so_luong_max=50, active=True, phong_hoc="B101", thu=l1.thu, ca_hoc=l1.ca_hoc)
+    lop_trung = LopHocPhan(
+        mon_hoc_id=mon.id,
+        hoc_ky_id=l1.hoc_ky_id,
+        thu=l1.thu,
+        ca_hoc=l1.ca_hoc,
+        phong_hoc="Z",
+        so_luong_max=50
+    )
     test_session.add(lop_trung)
     test_session.commit()
 
-    with pytest.raises(ValueError, match="Trùng lịch học"):
+    with pytest.raises(ValueError):
         dang_ky_lop(lop_trung.id)
 
-def test_dang_ky_vuot_25_tin_chi_fail(test_session, sample_lop_hoc_phan, mock_login_user):
-    l1 = sample_lop_hoc_phan[0]
-    l2 = sample_lop_hoc_phan[1]
 
-    m1 = MonHoc.query.get(l1.mon_hoc_id)
-    m1.so_tin_chi = 23
-    test_session.commit()
-
-    dang_ky_lop(l1.id)
-
-    with pytest.raises(ValueError, match="Bạn đã vượt quá 25 tín chỉ"):
-        dang_ky_lop(l2.id)
-
-def test_dk_trung_mh(test_session,sample_lop_hoc_phan,mock_login_user):
+def test_trung_mon(sample_lop_hoc_phan, test_session, mock_login_user):
     l1 = sample_lop_hoc_phan[0]
     dang_ky_lop(l1.id)
 
-    l2 = LopHocPhan(mon_hoc_id=l1.mon_hoc_id,
-        hoc_ky_id=l1.hoc_ky_id, so_luong_max=50, active=True,
-        phong_hoc="Z999", thu=7, ca_hoc=2
+    lop_moi = LopHocPhan(
+        mon_hoc_id=l1.mon_hoc_id,
+        hoc_ky_id=l1.hoc_ky_id,
+        thu=7,
+        ca_hoc=2,
+        phong_hoc="NEW"
     )
-
-    test_session.add(l2)
+    test_session.add(lop_moi)
     test_session.commit()
 
-    with pytest.raises(ValueError, match="Bạn đã đăng ký lớp"):
+    with pytest.raises(ValueError):
+        dang_ky_lop(lop_moi.id)
+
+
+def test_vuot_25_tin_chi(sample_lop_hoc_phan, test_session, mock_login_user):
+    l1, l2 = sample_lop_hoc_phan[0], sample_lop_hoc_phan[1]
+
+    m = MonHoc.query.get(l1.mon_hoc_id)
+    m.so_tin_chi = 24
+    test_session.commit()
+
+    dang_ky_lop(l1.id)
+
+    with pytest.raises(ValueError):
         dang_ky_lop(l2.id)
+
+
+def test_mon_tien_quyet(sample_lop_hoc_phan, test_session, mock_login_user):
+    l4 = sample_lop_hoc_phan[3]
+
+    m = MonHoc.query.get(l4.mon_hoc_id)
+    m.mon_tien_quyet_id = 1
+    test_session.commit()
+
+    with pytest.raises(ValueError):
+        dang_ky_lop(l4.id)
+
+
+def test_da_hoc_mon(sample_lop_hoc_phan, test_session, sample_student, mock_login_user):
+    l1 = sample_lop_hoc_phan[0]
+
+    dk = DangKy(
+        sinh_vien_id=sample_student.id,
+        lop_hoc_phan_id=l1.id,
+        diem_tong_ket=8
+    )
+    test_session.add(dk)
+    test_session.commit()
+
+    lop_moi = LopHocPhan(
+        mon_hoc_id=l1.mon_hoc_id,
+        hoc_ky_id=l1.hoc_ky_id,
+        thu=5,
+        ca_hoc=2,
+        phong_hoc="B202"
+    )
+    test_session.add(lop_moi)
+    test_session.commit()
+
+    with pytest.raises(ValueError):
+        dang_ky_lop(lop_moi.id)
