@@ -1,6 +1,7 @@
 import pytest
 from flask import Flask
-from ecourse import db
+from ecourse import db, login_manager
+
 
 def create_app():
     app = Flask(__name__)
@@ -9,6 +10,8 @@ def create_app():
     app.config['TESTING'] = True
     app.secret_key = '34y394yjsbdkjsdjksdh'
     db.init_app(app)
+
+    login_manager.init_app(app)
 
     from ecourse.index import register_route
     register_route(app)
