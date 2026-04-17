@@ -56,8 +56,14 @@ def dang_ky_lop(lop_hoc_phan_id):
     if not lop:
         raise ValueError("Lớp học phần không tồn tại!")
 
-    #Ràng buộc cho không được đăng ký sau thời hạn
+    if not lop.active:
+        raise ValueError("Lớp học phần này đang bị khóa hoặc chưa mở")
+
+    #Ràng buộc cho không được đăng ký sau thời hạn và học kỳ chưa active
     hoc_ky = HocKy.query.get(lop.hoc_ky_id)
+
+    if not hoc_ky.active:
+        raise ValueError("Học kỳ chứa môn hiện không trong thời gian đăng ký")
     if datetime.now() > hoc_ky.han_dang_ky:
         raise ValueError("Đã hết thời hạn đăng ký")
 

@@ -257,23 +257,41 @@ def test_gioi_han_25_tin_chi(sample_lop_hoc_phan, test_session, mock_login_user,
     (2, False),
     (4, True),
 ])
-def test_min_12_tin_chi(test_session, sample_lop_hoc_phan, mock_login_user, so_mon, expected_pass):
+def test_min_12_tin_chi(test_session, mocker, test_client, sample_lop_hoc_phan, so_mon, expected_pass):
+    # 1. BẮT BUỘC MOCK FLASK-LOGIN ĐỂ VƯỢT QUA @login_required (Chuẩn file PDF)
+    class FakeUser:
+        is_authenticated = True
+        id = 1
+
+    mocker.patch("flask_login.utils._get_user", return_value=FakeUser())
+    mocker.patch("ecourse.dao.current_user", new=FakeUser())
+
     selected = sample_lop_hoc_phan[:so_mon]
+    with test_client.session_transaction() as sess:
+        cart = {}
+        for lop in selected:
+            cart[str(lop.id)] = {
+                "id": str(lop.id),
+                "tin_chi": 3,
+                "name": f"Môn {lop.id}"
+            }
+        sess["cart"] = cart
 
-    tong_tin_chi = 0
+    mock_add = mocker.patch("ecourse.dao.dang_ky_lop")
 
-    for lop in selected:
-        dang_ky_lop(lop.id)
-        mon = MonHoc.query.get(lop.mon_hoc_id)
-        tong_tin_chi += mon.so_tin_chi
+    response = test_client.post("/api/checkout")
 
-    assert tong_tin_chi == so_mon * 3
+    try:
+        data = response.get_json()
+    except Exception:
+        pytest.fail(f"API trả về không phải JSON! Nội dung: {response.data.decode('utf-8')}")
 
     if expected_pass:
-        assert tong_tin_chi >= 12
+        assert data["status"] == 200
     else:
-        assert tong_tin_chi < 12
-
+        assert data["status"] == 400
+        assert "12 tín chỉ" in data["message"].lower()
+        mock_add.assert_not_called()
 
 def test_mon_tien_quyet(sample_lop_hoc_phan, test_session, mock_login_user):
     l4 = sample_lop_hoc_phan[3]
@@ -309,3 +327,21 @@ def test_da_hoc_mon(sample_lop_hoc_phan, test_session, sample_student, mock_logi
 
     with pytest.raises(ValueError):
         dang_ky_lop(lop_moi.id)
+
+def test_lop_khong_active(sample_lop_hoc_phan, test_session, mock_login_user):
+    l1 = sample_lop_hoc_phan[0]
+    l1.active = False
+    test_session.commit()
+
+    with pytest.raises(ValueError, match="bị khóa hoặc chưa mở"):
+        dang_ky_lop(l1.id)
+
+
+def test_hoc_ky_khong_active(sample_lop_hoc_phan, test_session, mock_login_user):
+    l1 = sample_lop_hoc_phan[0]
+    hk = HocKy.query.get(l1.hoc_ky_id)
+    hk.active = False
+    test_session.commit()
+
+    with pytest.raises(ValueError, match="không trong thời gian"):
+        dang_ky_lop(l1.id)

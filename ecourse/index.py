@@ -4,7 +4,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import redirect
 from ecourse import app, dao, login_manager, db
 from flask import render_template, request, session
-from ecourse.models import MonHoc, User, LopHocPhan, DangKy
+from ecourse.models import MonHoc, User, LopHocPhan, DangKy, HocKy
 from ecourse import app, dao
 from flask_login import login_required
 from flask import request, jsonify
@@ -48,8 +48,20 @@ def register_route(app):
     def api_dang_ky_tam():
         cart = session.get('cart', {})
         data = request.json
-
+        #Chặn ghi danh lớp active
         new_id = str(data.get('id'))
+        lop_check = LopHocPhan.query.get(new_id)
+
+        if not lop_check:
+            return jsonify({'status': 400, 'err_msg': 'Lớp học phần không tồn tại trên hệ thống!'})
+        if not lop_check.active:
+            return jsonify({'status': 400, 'err_msg': 'Lớp học phần này hiện đã bị khóa hoặc không mở đăng ký!'})
+
+        hoc_ky_check = HocKy.query.get(lop_check.hoc_ky_id)
+        if not hoc_ky_check or not hoc_ky_check.active:
+            return jsonify(
+                {'status': 400, 'err_msg': 'Học kỳ của môn này hiện không trong thời gian cho phép đăng ký!'})
+
         new_name = data.get('name')
         new_thu = str(data.get('thu'))
         new_ca = str(data.get('ca_hoc'))
