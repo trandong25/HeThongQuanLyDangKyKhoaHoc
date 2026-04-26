@@ -1,8 +1,10 @@
 import math
+from datetime import datetime, timedelta
+
 import cloudinary.uploader
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import redirect
-from ecourse import app, dao, login_manager, db
+from ecourse import app, dao, login_manager, db, HAN_DANG_KY,NGAY_BAT_DAU_HK,TIN_CHI_TOI_THIEU,NGAY_BAT_DAU_DANG_KY
 from flask import render_template, request, session
 from ecourse.models import MonHoc, User, LopHocPhan, DangKy, HocKy
 from ecourse import app, dao
@@ -10,15 +12,27 @@ from flask_login import login_required
 from flask import request, jsonify
 
 
+
 def register_route(app):
     @app.route("/")
     def index():
-        page = request.args.get("page", 1, type=int)
+        # ràng buộc Không được đăng ký môn sau thời hạn đăng ký
+        het_han_dang_ky = False
+        if datetime.now() > HAN_DANG_KY :
+            het_han_dang_ky = True
 
+        page = request.args.get("page", 1, type=int)
         kw = request.args.get("kw")
         pages = math.ceil(dao.count_lop_hoc_phan() / app.config['PAGE_SIZE'])
         classes = dao.load_lop_hoc_phan(kw=kw, page=page)
-        return render_template("index.html", classes=classes, pages=pages, curent_page=page)
+        return render_template("index.html",
+                               het_han_dang_ky=het_han_dang_ky,
+                               NGAY_BAT_DAU_DANG_KY=NGAY_BAT_DAU_DANG_KY,
+                               HAN_DANG_KY=HAN_DANG_KY,
+                               TIN_CHI_TOI_THIEU=TIN_CHI_TOI_THIEU,
+                               classes=classes,
+                               pages=pages,
+                               curent_page=page)
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
@@ -27,7 +41,6 @@ def register_route(app):
             username = request.form.get("username")
             password = request.form.get("password")
             user = dao.auth_user(username, password)
-
             if user:
                 login_user(user)
                 next = request.args.get("next")
@@ -36,6 +49,7 @@ def register_route(app):
                 error_msg = "Đăng nhập không thành công. Vui lòng kểm tra lại username và mật khẩu"
 
         return render_template("login.html", error_msg=error_msg)
+
 
     @app.route("/logout")
     def logout():
@@ -108,6 +122,45 @@ def register_route(app):
             return jsonify({'status': 200, 'message': 'Đã xóa thành công'})
         return jsonify({'status': 400, 'err_msg': 'Môn học không tồn tại trong danh sách'})
 
+    @app.route("/api/xoa_mon_da_dang_ky/<int:id>", methods=['DELETE'])
+    @login_required
+    def api_xoa_mon_da_dang_ky(id):
+        if datetime.now() > NGAY_BAT_DAU_HK + timedelta(weeks=2):
+            return jsonify({'status': 400, 'message': 'Quá thời hạn 2 tuần!'})
+        # Lấy ĐÚNG cái phiếu đăng ký cần xóa dựa vào ID truyền từ UI lên
+        phieu_dk = DangKy.query.get(id)
+
+        if not phieu_dk:
+            return jsonify({'status': 404, 'message': 'Không tìm thấy dữ liệu đăng ký này!'})
+
+        ds_da_dk = DangKy.query.filter_by(sinh_vien_id=current_user.id).all()
+        tong_tc_hien_tai = sum(dk.lop_hoc_phan.mon_hoc.so_tin_chi for dk in ds_da_dk)
+        tc_mon_xoa = phieu_dk.lop_hoc_phan.mon_hoc.so_tin_chi
+        if (tong_tc_hien_tai - tc_mon_xoa) < 12:
+            return jsonify({
+                'status': 400,
+                'message': f'Quy định tối thiểu 12 TC. Hiện tại bạn có {tong_tc_hien_tai} TC, xóa môn này sẽ không đủ điều kiện.'
+            })
+
+        # 1. Chỉ sinh viên đăng ký mới được huỷ
+        if phieu_dk.sinh_vien_id != current_user.id:
+            return jsonify({'status': 403, 'message': 'Không có quyền hủy!'})
+
+        # 2. Không được huỷ sau 2 tuần bắt đầu học kỳ
+        # (Lưu ý: Chỉnh lại ngày 15/08/2026 này cho khớp với ngày trong DB của bạn nhé)
+        ngay_bd = datetime(2026, 8, 15)
+        if datetime.now() > ngay_bd + timedelta(weeks=2):
+            return jsonify({'status': 400, 'message': 'Quá thời hạn 2 tuần để hủy môn!'})
+
+        # 3. Kiểm tra đã thi giữa kỳ chưa
+        # (Lưu ý: Check lại trong file models.py xem bạn đặt tên cột là diem_gk hay diem_giua_ky)
+        if phieu_dk.lop_hoc_phan.da_thi_giua_ky:
+            return jsonify({'status': 400, 'message': 'Môn đã có điểm giữa kỳ, không thể hủy!'})
+
+        db.session.delete(phieu_dk)
+        db.session.commit()
+        return jsonify({'status': 200, 'message': 'Hủy môn thành công!'})
+
     @app.route("/class_register")
     @login_required
     def class_register():
@@ -117,9 +170,19 @@ def register_route(app):
         danhSachMonDaDangKy = DangKy.query.filter_by(sinh_vien_id=current_user.id).all()
         for mon in danhSachMonDaDangKy:
             tong_tc += mon.lop_hoc_phan.mon_hoc.so_tin_chi
-
         history_data = dao.get_registered_classes(current_user.id)
-        return render_template('class_register.html', lop_cho=lop_cho, tong_tc=tong_tc, history=history_data)
+
+        # rang buoc huy mon sau 2 tuan hoc
+        huy_mon = True
+        if datetime.now() > NGAY_BAT_DAU_HK + timedelta(weeks=2):
+            huy_mon = False
+
+        return render_template('class_register.html',
+                               lop_cho=lop_cho,
+                               tong_tc=tong_tc,
+                               history=history_data,
+                               huy_mon=huy_mon,
+                               TIN_CHI_TOI_THIEU=TIN_CHI_TOI_THIEU)
 
     @app.route('/timetable')
     @login_required
@@ -147,6 +210,7 @@ def register_route(app):
         try:
             for item in lop_cho:
                 lop_id = int(item['id'])
+
                 try:
                     dao.dang_ky_lop(lop_id)
                 except Exception as e:
