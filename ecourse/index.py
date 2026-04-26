@@ -4,13 +4,14 @@ from datetime import datetime, timedelta
 import cloudinary.uploader
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import redirect
-from ecourse import app, dao, login_manager, db, HAN_DANG_KY,NGAY_BAT_DAU_HK,TIN_CHI_TOI_THIEU,NGAY_BAT_DAU_DANG_KY
+from ecourse import app, dao, login_manager, db,NGAY_BAT_DAU_HK,TIN_CHI_TOI_THIEU,NGAY_BAT_DAU_DANG_KY
 from flask import render_template, request, session
 from ecourse.models import MonHoc, User, LopHocPhan, DangKy, HocKy
 from ecourse import app, dao
 from flask_login import login_required
 from flask import request, jsonify
 
+HAN_DANG_KY = datetime(2026, 4 ,5, 17, 0, 0)
 
 
 def register_route(app):

@@ -1,67 +1,108 @@
 {% extends 'layout/base.html' %}
 {% block content %}
 
-<div class="mt-4">
+<div class="mt-4 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-        <h4 class="text-info m-0">LỊCH SỬ ĐĂNG KÝ CỦA TÔI</h4>
-        <a href="/" class="btn btn-outline-secondary btn-sm">Quay lại trang chủ</a>
+        <h4 class="text-info m-0"><i class="fas fa-history me-2"></i>LỊCH SỬ ĐĂNG KÝ CỦA TÔI</h4>
+
     </div>
 
-    <table class="table table-bordered table-striped shadow-sm mt-3">
-        <thead class="table-info text-center">
-            <tr>
-                <th>Mã Đăng ký</th>
-                <th>Môn học</th>
-                <th>Ngày đăng ký</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for h in history %}
-            <tr class="text-center align-middle">
-                <td>{{ h.id }}</td>
-                <td>{{ h.lop_hoc_phan.mon_hoc.name }}</td>
-                <td>{{ h.ngay_dang_ky }}</td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="3" class="text-center text-muted py-3">
-                    Bạn chưa đăng ký môn học nào.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% set tc_db = namespace(tong=0) %}
+    {% for h in history %}
+        {% set tc_db.tong = tc_db.tong + h.lop_hoc_phan.mon_hoc.so_tin_chi %}
+    {% endfor %}
+
+    {% if history %}
+    <div class="alert alert-info d-flex justify-content-between align-items-center shadow-sm">
+        <div>
+            <i class="fas fa-check-circle me-2"></i><strong>Tổng tín chỉ đã đăng ký : <span class="text-danger fs-5">{{ tc_db.tong }}</span> TC</strong>
+        </div>
+
+    </div>
+    {% endif %}
+
+    <div class="table-responsive shadow-sm">
+        <table class="table table-bordered table-hover mt-2 mb-0 bg-white">
+            <thead class="table-info text-center align-middle">
+                <tr>
+                    <th>Mã Đăng ký</th>
+                    <th>Tên môn học</th>
+                    <th>Số tín chỉ</th>
+                    <th>Lịch học (Thứ - Ca)</th>
+                    <th>Phòng học</th>
+                    <th>Ngày đăng ký</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in history %}
+                <tr class="text-center align-middle">
+                    <td><strong>{{ h.id }}</strong></td>
+                    <td class="text-start fw-bold text-primary">{{ h.lop_hoc_phan.mon_hoc.name }}</td>
+                    <td>{{ h.lop_hoc_phan.mon_hoc.so_tin_chi }}</td>
+                    <td>Thứ {{ h.lop_hoc_phan.thu }} - Ca {{ h.lop_hoc_phan.ca_hoc }}</td>
+                    <td>{{ h.lop_hoc_phan.phong_hoc }}</td>
+                    <td class="small">{{ h.ngay_dang_ky.strftime('%d/%m/%Y %H:%M') if h.ngay_dang_ky else '' }}</td>
+                    {%if not huy_mon%}
+                    <td>
+                        <button class="btn btn-sm btn-secondary disabled" title="Đã qua 2 tuần đầu học kỳ, không thể hủy">
+                            <i class="fas fa-lock me-1"></i>Đã khóa hủy
+                        </button>
+                    </td>
+                    {%else%}
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger fw-bold"
+                                onclick="xoaMonHocDaDangKy({{ h.id }}, {{ h.lop_hoc_phan.mon_hoc.so_tin_chi }},{{tc_db.tong}},{{TIN_CHI_TOI_THIEU}})">
+                            <i class="fas fa-trash-alt me-1"></i>Hủy môn
+                        </button>
+                    </td>
+                    {%endif%}
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <i class="fas fa-folder-open fs-1 mb-3 d-block text-light"></i>
+                        Bạn chưa đăng ký thành công môn học nào.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
+<hr class="my-5 text-muted">
 
-<div class="container mt-5 mb-5 vh-100">
+<div class="container mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold text-dark"><i class="fas fa-shopping-cart text-primary me-2"></i>Môn học chờ xác nhận</h3>
-        <a href="/" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Tiếp tục chọn môn</a>
+        <h3 class="fw-bold text-dark"><i class="fas fa-shopping-cart text-primary me-2"></i>Danh sách môn học ghi danh</h3>
+        <a href="/" class="btn btn-outline-secondary"><i class="fas fa-plus me-2"></i>Quay lại trang chủ</a>
     </div>
 
     {% if lop_cho %}
     <div class="card shadow-sm mb-4 border-0">
         <div class="card-body p-0">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead class="table-light text-center">
                     <tr>
-                        <th class="ps-4">Tên môn học</th>
-                        <th class="text-center">Tín chỉ</th>
+                        <th class="text-start ps-4">Tên môn học</th>
+                        <th>Tín chỉ</th>
                         <th>Lịch học (Thứ - Ca)</th>
                         <th>Phòng học</th>
-                        <th class="text-center pe-4">Hủy bỏ</th>
+                        <th>Hủy bỏ</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for lop in lop_cho %}
-                    <tr>
-                        <td class="ps-4 fw-bold text-primary">{{ lop.name }}</td>
-                        <td class="text-center fs-5 fw-bold">{{ lop.tin_chi }}</td>
-                        <td><i class="far fa-clock text-muted me-2"></i>Thứ {{ lop.thu }} | Ca {{ lop.ca_hoc }}</td>
+                    <tr class="text-center">
+                        <td class="text-start ps-4 fw-bold text-primary">{{ lop.name }}</td>
+                        <td class="fs-5 fw-bold">{{ lop.tin_chi }}</td>
+                        <td><i class="far fa-clock text-muted me-2"></i>Thứ {{ lop.thu }} ( Ca {{ lop.ca_hoc }} )</td>
                         <td><i class="fas fa-map-marker-alt text-muted me-2"></i>{{ lop.phong_hoc }}</td>
-                        <td class="text-center pe-4">
-                            <button onclick="xoaMonHoc('{{ lop.id }}')" class="btn btn-sm btn-danger">Xóa</button>
+                        <td>
+                            <button onclick="xoaMonHoc('{{ lop.id }}')" class="btn btn-sm btn-danger">
+                                <i class="fas fa-times"></i> Xóa
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -69,15 +110,15 @@
             </table>
         </div>
 
-        <div class="card-footer bg-white p-4">
+        <div class="card-footer bg-light p-4">
             <div class="row align-items-center">
                 <div class="col-md-7">
                     <h5 class="mb-1">Tổng tín chỉ tạm tính:
-                        <span class="badge {% if tong_tc >= 12 %}bg-success{% else %}bg-danger{% endif %} fs-4 ms-2 shadow-sm">
-                            {{ tong_tc }} / 12 TC
+                        <span class="badge {% if tong_tc >= TIN_CHI_TOI_THIEU  %}bg-success{% else %}bg-danger{% endif %} fs-4 ms-2 shadow-sm">
+                            {{ tong_tc }} / {{TIN_CHI_TOI_THIEU}}
                         </span>
                     </h5>
-                    {% if tong_tc < 12 %}
+                    {% if tong_tc < TIN_CHI_TOI_THIEU %}
                         <small class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>Bạn cần đăng ký thêm {{ 12 - tong_tc }} tín chỉ nữa.</small>
                     {% else %}
                         <small class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Đã đủ điều kiện xác nhận nhập học.</small>
@@ -85,13 +126,11 @@
                 </div>
 
                 <div class="col-md-5 text-end">
-
-                        {% if tong_tc < 12 %}
-                            <button type="button" class="btn btn-secondary disabled w-100 py-2">Chưa đủ điều kiện xác nhận</button>
-                        {% else %}
-                            <button type="button" onclick="checkOut()"  class="btn btn-success fw-bold w-100 py-2 fs-5 shadow"><i class="fas fa-check-circle me-2"></i>XÁC NHẬN NHẬP HỌC</button>
-                        {% endif %}
-
+                    {% if tong_tc < TIN_CHI_TOI_THIEU %}
+                        <button type="button" class="btn btn-secondary disabled w-100 py-2">Chưa đủ điều kiện xác nhận</button>
+                    {% else %}
+                        <button type="button" onclick="checkOut()" class="btn btn-success fw-bold w-100 py-2 fs-5 shadow"><i class="fas fa-check-circle me-2"></i>XÁC NHẬN NHẬP HỌC</button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -99,9 +138,9 @@
     {% else %}
     <div class="alert alert-warning p-4 shadow-sm text-center rounded-3">
         <i class="fas fa-box-open fs-1 text-muted mb-3 d-block"></i>
-        <h5 class="fw-bold">Bạn chưa chọn môn học nào!</h5>
+        <h5 class="fw-bold">DANH SÁCH ĐANG TRỐNG !</h5>
         <p>Vui lòng quay lại trang chủ để ghi danh các môn học mong muốn.</p>
-        <a href="/" class="btn btn-primary mt-2">Đến danh sách môn học</a>
+
     </div>
     {% endif %}
 </div>
