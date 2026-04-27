@@ -2,16 +2,15 @@ import math
 from datetime import datetime, timedelta
 
 import cloudinary.uploader
-from flask_login import login_user, logout_user, login_required, current_user
+from flask_login import login_user, logout_user, current_user
 from werkzeug.utils import redirect
-from ecourse import app, dao, login_manager, db,NGAY_BAT_DAU_HK,TIN_CHI_TOI_THIEU,NGAY_BAT_DAU_DANG_KY
-from flask import render_template, request, session
-from ecourse.models import MonHoc, User, LopHocPhan, DangKy, HocKy
+from ecourse import login_manager, db
+from ecourse.config import NGAY_BAT_DAU_DANG_KY, NGAY_BAT_DAU_HK, TIN_CHI_TOI_THIEU, HAN_DANG_KY
+from flask import render_template, session
+from ecourse.models import LopHocPhan, DangKy, HocKy
 from ecourse import app, dao
 from flask_login import login_required
 from flask import request, jsonify
-
-HAN_DANG_KY = datetime(2026, 4 ,5, 17, 0, 0)
 
 
 def register_route(app):
@@ -19,7 +18,7 @@ def register_route(app):
     def index():
         # ràng buộc Không được đăng ký môn sau thời hạn đăng ký
         het_han_dang_ky = False
-        if datetime.now() > HAN_DANG_KY :
+        if datetime.now() > HAN_DANG_KY:
             het_han_dang_ky = True
 
         page = request.args.get("page", 1, type=int)
@@ -128,7 +127,7 @@ def register_route(app):
     def api_xoa_mon_da_dang_ky(id):
         if datetime.now() > NGAY_BAT_DAU_HK + timedelta(weeks=2):
             return jsonify({'status': 400, 'message': 'Quá thời hạn 2 tuần!'})
-        # Lấy ĐÚNG cái phiếu đăng ký cần xóa dựa vào ID truyền từ UI lên
+
         phieu_dk = DangKy.query.get(id)
 
         if not phieu_dk:
@@ -148,13 +147,13 @@ def register_route(app):
             return jsonify({'status': 403, 'message': 'Không có quyền hủy!'})
 
         # 2. Không được huỷ sau 2 tuần bắt đầu học kỳ
-        # (Lưu ý: Chỉnh lại ngày 15/08/2026 này cho khớp với ngày trong DB của bạn nhé)
-        ngay_bd = datetime(2026, 8, 15)
-        if datetime.now() > ngay_bd + timedelta(weeks=2):
+
+
+        if datetime.now() > NGAY_BAT_DAU_HK + timedelta(weeks=2):
             return jsonify({'status': 400, 'message': 'Quá thời hạn 2 tuần để hủy môn!'})
 
         # 3. Kiểm tra đã thi giữa kỳ chưa
-        # (Lưu ý: Check lại trong file models.py xem bạn đặt tên cột là diem_gk hay diem_giua_ky)
+
         if phieu_dk.lop_hoc_phan.da_thi_giua_ky:
             return jsonify({'status': 400, 'message': 'Môn đã có điểm giữa kỳ, không thể hủy!'})
 
@@ -291,7 +290,5 @@ def load_user(user_id):
 
 
 if __name__ == "__main__":
-    from ecourse import admin
-
     register_route(app=app)
     app.run(debug=True)

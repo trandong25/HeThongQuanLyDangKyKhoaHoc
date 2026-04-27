@@ -31,7 +31,6 @@ def sample_lop_hoc_phan(test_session):
 
     return [l1, l2]
 
-
 def test_huy_mon(test_client, test_session, sample_student, sample_lop_hoc_phan, mocker):
     # ===== 1. Fake user =====
     class FakeUser:
@@ -96,7 +95,6 @@ def test_huy_mon_duoi_12_tin_chi(test_client, test_session, sample_student, samp
     assert data["status"] == 400  # Nhưng Business Logic trả về lỗi 400
     assert DangKy.query.count() == 1  # Phiếu đăng ký vẫn còn nguyên trong DB, không bị xóa
 
-
 def test_huy_mon_qua_han_2_tuan(test_client, test_session, sample_student, sample_lop_hoc_phan, mocker):
     """Test chặn hủy môn nếu đã lố 2 tuần kể từ ngày bắt đầu học kỳ"""
 
@@ -124,9 +122,41 @@ def test_huy_mon_qua_han_2_tuan(test_client, test_session, sample_student, sampl
     assert "Quá thời hạn" in data["message"]
 
 
+def test_huy_mon_da_thi_giua_ky(test_client, test_session, sample_student, sample_lop_hoc_phan, mocker):
+    class FakeUser:
+        is_authenticated = True
+        id = sample_student.id
 
+    mocker.patch("flask_login.utils._get_user", return_value=FakeUser())
+    mocker.patch("ecourse.index.current_user", new=FakeUser())
 
+    l1, l2 = sample_lop_hoc_phan[0], sample_lop_hoc_phan[1]
 
+    m1 = MonHoc.query.get(l1.mon_hoc_id)
+    m2 = MonHoc.query.get(l2.mon_hoc_id)
+    m1.so_tin_chi = 15
+    m2.so_tin_chi = 5
+    test_session.commit()
+
+    dk1 = DangKy(sinh_vien_id=sample_student.id, lop_hoc_phan_id=l1.id)
+    dk2 = DangKy(sinh_vien_id=sample_student.id, lop_hoc_phan_id=l2.id)
+    l2.da_thi_giua_ky = True
+
+    test_session.add_all([dk1, dk2])
+    test_session.commit()
+
+    fake_now = real_datetime(2020, 1, 1)
+    datetime_mock = mocker.patch("ecourse.index.datetime")
+    datetime_mock.now.return_value = fake_now
+    datetime_mock.side_effect = lambda *args, **kwargs: real_datetime(*args, **kwargs)
+
+    response = test_client.delete(f"/api/xoa_mon_da_dang_ky/{dk2.id}")
+    data = response.get_json()
+
+    assert response.status_code == 200
+    assert data["status"] == 400
+    assert DangKy.query.count() == 2
+    assert "điểm" in data["message"].lower() or "giữa kỳ" in data["message"].lower()
 
 if __name__ == '__main__':
     unittest.main()
