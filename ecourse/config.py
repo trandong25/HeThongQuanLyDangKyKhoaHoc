@@ -4,4 +4,4 @@ NGAY_BAT_DAU_DANG_KY = datetime(2026,4,1,12,0,0)
 NGAY_BAT_DAU_HK = datetime(2026, 4, 16,0,0,0)
 TIN_CHI_TOI_THIEU = 12
 TIN_CHI_TOI_DA = 25
-HAN_DANG_KY = datetime(2026, 4 ,5, 17, 0, 0)
+HAN_DANG_KY = datetime(2026, 5 ,10, 17, 0, 0)
