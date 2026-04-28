@@ -1,39 +1,75 @@
 {% extends 'layout/base.html' %}
 {% block content %}
 
-<div class="container mt-5 mb-5 ">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold text-success"><i class="fas fa-calendar-alt me-2"></i>Thời khóa biểu chính thức</h3>
-        <button class="btn btn-outline-success" onclick="window.print()"><i class="fas fa-print me-2"></i>In thời khóa biểu</button>
+<div class="container-fluid mt-4 mb-5 px-lg-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <h3 class="fw-bold text-success m-0"><i class="fas fa-calendar-alt me-2"></i>THỜI KHÓA BIỂU CHÍNH THỨC</h3>
+        <button class="btn btn-outline-success fw-bold shadow-sm" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>In thời khóa biểu
+        </button>
     </div>
-    
+
     {% if lop_da_xac_nhan %}
-    <div class="row">
-        {% for lop in lop_da_xac_nhan %}
-        <div class="col-md-4 mb-4">
-            <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; overflow: hidden;">
-                <div class="bg-success py-2"></div>
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h5 class="card-title text-dark fw-bold mb-0 lh-base">{{ lop.mon_hoc.name }}</h5>
-                        <span class="badge bg-light text-dark border ms-2 px-2 py-1">{{ lop.mon_hoc.so_tin_chi }} TC</span>
-                    </div>
-                    
-                    <div class="p-3 bg-light rounded-3">
-                        <p class="mb-2"><i class="far fa-clock text-primary me-2"></i><strong>Thứ {{ lop.thu }}</strong> (Ca {{ lop.ca_hoc }})</p>
-                        <p class="mb-0"><i class="fas fa-map-marker-alt text-danger me-2 ms-1"></i><strong>{{ lop.phong_hoc }}</strong></p>
-                    </div>
-                    <div class="mt-3 text-muted" style="font-size: 0.85rem;">
-                        <i>Mã LHP: {{ lop.id }}</i>
-                    </div>
-                </div>
-            </div>
-        </div>
+
+    {% set cac_thu = [2, 3, 4, 5, 6, 7] %}
+    {% set cac_ca = [1, 2, 3, 4, 5] %}
+
+    <div class="table-responsive shadow-sm rounded-3">
+        <table class="table table-bordered text-center align-middle mb-0 bg-white" style="table-layout: fixed; min-width: 1000px;">
+            <thead class="table-primary text-center align-middle">
+    <tr>
+        <th style="width: 10%;" class="bg-primary text-white border-primary">Ca \ Thứ</th>
+        {% for thu in cac_thu %}
+        <th style="width: 15%;" class="bg-primary text-white border-primary py-3 fs-5">Thứ {{ thu }}</th>
         {% endfor %}
+    </tr>
+</thead>
+            <tbody>
+                {% for ca in cac_ca %}
+                <tr>
+                    <td class="fw-bold bg-light text-success fs-5 py-4">Ca {{ ca }}</td>
+
+                    {% for thu in cac_thu %}
+                    <td class="p-2" style="height: 120px;">
+
+                        {# Thuật toán dò tìm: Kiểm tra xem có môn nào khớp với Thứ và Ca hiện tại không #}
+                        {% for lop in lop_da_xac_nhan %}
+                            {% if lop.thu|string == thu|string and lop.ca_hoc|string == ca|string %}
+
+                                <div class="bg-white border border-primary border-1 shadow-sm rounded-3 p-2 h-100 d-flex flex-column justify-content-center"
+     style="transition: transform 0.2s; cursor: default;"
+     onmouseover="this.style.transform='scale(1.05)'"
+     onmouseout="this.style.transform='scale(1)'">
+
+    <div class="fw-bold text-primary mb-2" style="font-size: 0.95rem;">{{ lop.mon_hoc.name }}</div>
+
+    <div class="small text-dark fw-bold"><i class="fas fa-map-marker-alt text-danger me-1"></i>P. {{ lop.phong_hoc }}</div>
+    <div class="small text-muted mt-1" style="font-size: 0.75rem;">Mã LHP: {{ lop.id }}</div>
+
+</div>
+
+                            {% endif %}
+                        {% endfor %}
+
+                    </td>
+                    {% endfor %}
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+
+    <div class="mt-3 text-end text-muted small">
+        <i>* Bảng thời khóa biểu được tự động trích xuất từ hệ thống đăng ký học phần.</i>
+    </div>
+
     {% else %}
-    <div class="alert alert-info p-4 shadow-sm rounded-3">
-        <i class="fas fa-info-circle me-2"></i>Bạn chưa xác nhận nhập học môn nào. Hãy đến mục Đăng ký môn để thao tác.
+    <div class="alert alert-warning p-5 shadow-sm text-center rounded-3">
+        <i class="fas fa-calendar-times fs-1 text-muted mb-3 d-block"></i>
+        <h4 class="fw-bold text-dark">Chưa có thời khóa biểu</h4>
+        <p class="text-muted">Bạn chưa xác nhận nhập học môn nào. Hãy đến mục Đăng ký môn để thao tác.</p>
+        <a href="/" class="btn btn-primary mt-2"><i class="fas fa-plus me-2"></i>Đăng ký môn học ngay</a>
     </div>
     {% endif %}
 

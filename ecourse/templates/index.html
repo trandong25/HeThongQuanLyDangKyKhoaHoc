@@ -1,50 +1,31 @@
 {%extends 'layout/base.html'%}
 {% block content %}
 
+{%if het_han_dang_ky%}
+<div class="container-fluid mt-4 mb-4">
+    <div class="p-4 text-center rounded-3 shadow-sm border border-primary border-1" style="background-color: #e3f2fd;">
+        <h2 class="text-success fw-bold">ĐĂNG KÝ HỌC PHẦN HỌC KỲ I (2026 - 2027)</h2>
+        <p class="fs-5 text-muted mb-2">Cổng đăng ký đã đóng</p>
+    </div>
+</div>
+{%else%}
+
 <div class="container-fluid mt-4 mb-4">
     <div class="p-4 text-center rounded-3 shadow-sm border border-primary border-1" style="background-color: #e3f2fd;">
         <h2 class="text-success fw-bold">ĐĂNG KÝ HỌC PHẦN HỌC KỲ I (2026 - 2027)</h2>
         <p class="fs-5 text-muted mb-2">Cổng đăng ký mở từ
-            <strong>08:00 ngày 10/04/2026</strong> đến
-            <strong>17:00 ngày 15/04/2026</strong>
+            <strong>{{ NGAY_BAT_DAU_DANG_KY.strftime('%H:%M ngày %d/%m/%Y') }}</strong> đến
+            <strong>{{ HAN_DANG_KY.strftime('%H:%M ngày %d/%m/%Y') }}</strong>
         </p>
         <div class="alert alert-warning d-inline-block py-2 px-4 mb-0">
             <i class="fas fa-exclamation-triangle me-2"></i>
-            <strong>Lưu ý:</strong> Theo quy chế, sinh viên phải đăng ký tối thiểu <strong>12 tín chỉ</strong> trong học
-            kỳ chính.
+            <strong>Lưu ý:</strong> Theo quy chế, sinh viên phải đăng ký tối thiểu
+            <strong>{{TIN_CHI_TOI_THIEU}}</strong> trong học kỳ chính.
         </div>
     </div>
 </div>
 
 <h2 class="text-center mb-4">DANH SÁCH CÁC LỚP HỌC ĐANG MỞ</h2>
-<!--<div class="row">-->
-<!--    {% for c in classes %}-->
-<!--    <div class="col-md-4 col-xs-12 mt-2">-->
-<!--        <div class="card h-100 shadow-sm">-->
-<!--            <img src="https://www.bing.com/th?id=OADD2.7353118511174_1NNLCPIUNKM5HOYTCG&pid=21.2&c=17&roil=0.0216&roit=0.1032&roir=0.9766&roib=0.8482&w=300&h=157&dynsize=1&qlt=90&dpr=2.00"-->
-<!--                 class="card-img-top" alt="{{ c.name }}">-->
-
-<!--            <div class="card-body">-->
-<!--                <h4 class="card-title text-primary">{{ c.mon_hoc.name }}</h4>-->
-
-<!--                <p class="card-text mb-1">-->
-<!--                    <strong>Phòng:</strong> {{ c.phong_hoc }} <br>-->
-<!--                    <strongviet>Thứ:</strongviet> {{ c.thu }} | <strong>Ca:</strong> {{ c.ca_hoc }} <br>-->
-<!--                    <strong>Sĩ số:</strong> 0 / {{ c.so_luong_max }}-->
-<!--                </p>-->
-<!--            </div>-->
-
-<!--            <div class="card-footer bg-white border-0">-->
-<!--                {% if current_user.is_authenticated %}-->
-<!--                <button onclick="dangKyMonHoc({{c.id}})" class="btn btn-primary w-100">Đăng ký ngay</button>-->
-<!--                {% else %}-->
-<!--                <a href="/login" class="btn btn-secondary w-100">Đăng nhập để ĐK</a>-->
-<!--                {% endif %}-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--    {% endfor %}-->
-<!--</div>-->
 <div class="container mt-4 mb-5">
     <div class="row justify-content-center">
         <div class="col-lg-10">
@@ -67,7 +48,7 @@
                         <td><strong>{{ c.mon_hoc_id }}</strong></td>
                         <td class="text-primary fw-bold">{{ c.mon_hoc.name }}</td>
                         <td>{{ c.mon_hoc.so_tin_chi }}</td>
-                        <td>Thứ {{ c.thu }} | Ca {{ c.ca_hoc }}</td>
+                        <td>Thứ {{ c.thu }} - Ca {{ c.ca_hoc }} </td>
                         <td>{{ c.phong_hoc }}</td>
                         <td>
                             <span class="badge bg-success">{{ c.ds_dang_ky|length }} / {{ c.so_luong_max }}</span>
@@ -75,37 +56,37 @@
                         <td class="text-center">
                             {% if current_user.is_authenticated %}
 
-    {# 1. ĐÃ ĐĂNG KÝ TRONG DB #}
-    {% if c.id in registered_ids %}
-    <button class="btn btn-sm btn-primary fw-bold px-3 disabled" disabled>
-        Đã đăng ký lớp học
-    </button>
 
-    {# 2. LỚP ĐẦY #}
-    {% elif c.ds_dang_ky|length >= c.so_luong_max %}
-    <button class="btn btn-sm btn-secondary fw-bold px-3 disabled" disabled>
-        Hết chỗ
-    </button>
+                            {% if c.id in registered_ids %}
+                            <button class="btn btn-sm btn-primary fw-bold px-3 disabled" disabled>
+                                Đã đăng ký lớp học
+                            </button>
 
-    {# 3. TRONG GIỎ TẠM #}
-    {% elif session.get('cart') and c.id|string in session.get('cart') %}
-    <button class="btn btn-sm btn-success fw-bold px-3 disabled" disabled>
-        Đã ghi danh
-    </button>
 
-    {# 4. CHƯA GÌ HẾT #}
-    {% else %}
-    <button class="btn btn-sm btn-outline-success fw-bold px-3"
-            onclick="chonMonHoc({{ c.id }}, '{{ c.mon_hoc.name }}', {{ c.mon_hoc.so_tin_chi }}, '{{ c.thu }}', '{{ c.ca_hoc }}', '{{ c.phong_hoc }}', this)">
-        Ghi danh
-    </button>
-    {% endif %}
+                            {% elif c.ds_dang_ky|length >= c.so_luong_max %}
+                            <button class="btn btn-sm btn-secondary fw-bold px-3 disabled" disabled>
+                                Hết chỗ
+                            </button>
 
-{% else %}
-<button class="btn btn-sm btn-outline-success fw-bold px-3" onclick="yeuCauDangNhap()">
-    Ghi danh
-</button>
-{% endif %}
+
+                            {% elif session.get('cart') and c.id|string in session.get('cart') %}
+                            <button class="btn btn-sm btn-success fw-bold px-3 disabled" disabled>
+                                Đã ghi danh
+                            </button>
+
+
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-success fw-bold px-3"
+                                    onclick="chonMonHoc({{ c.id }}, '{{ c.mon_hoc.name }}', {{ c.mon_hoc.so_tin_chi }}, '{{ c.thu }}', '{{ c.ca_hoc }}', '{{ c.phong_hoc }}', this)">
+                                Ghi danh
+                            </button>
+                            {% endif %}
+
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-success fw-bold px-3" onclick="yeuCauDangNhap()">
+                                Ghi danh
+                            </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -131,5 +112,5 @@
     </div>
     {%endif%}
 </div>
-
-{% endblock %}
+{%endif%}
+{%endblock%}

@@ -79,6 +79,30 @@ function xoaMonHoc(id) {
         });
     }
 }
+function xoaMonHocDaDangKy(id, tinChiMonNay,TONG_TC_DANG_CO,tinChiToiThieu) {
+    // 1. Kiểm tra ràng buộc TỐI THIỂU 12 TÍN CHỈ
+    if ((TONG_TC_DANG_CO - tinChiMonNay) < tinChiToiThieu) {
+        alert(`KHÔNG THỂ HỦY MÔN!\nTheo quy định, bạn phải có tối thiểu ${tinChiToiThieu} TC. Nếu hủy môn này, bạn chỉ còn ${TONG_TC_DANG_CO - tinChiMonNay} TC. Vui lòng đăng ký thêm môn khác trước khi hủy môn này.`);
+        return; // Dừng luôn, không gửi request lên server
+    }
+
+    // 2. Nếu đủ điều kiện thì mới hỏi xác nhận
+    if (confirm("Bạn có chắc chắn muốn HỦY ĐĂNG KÝ môn học này?")) {
+        fetch('/api/xoa_mon_da_dang_ky/' + id, {
+            method: 'DELETE'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 200) {
+                alert("Đã hủy môn học thành công!");
+                location.reload();
+            } else {
+                alert("Lỗi: " + data.message);
+            }
+        });
+    }
+}
+
 function checkOut() {
     fetch('/api/checkout', {
         method: 'POST',
