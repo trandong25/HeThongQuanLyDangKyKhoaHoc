@@ -100,6 +100,11 @@ def register_route(app):
                     'err_msg': f'Trùng lịch! Thứ {new_thu} - Ca {new_ca} bạn đã có lịch học môn {lop_da_dk.mon_hoc.name}.'
                 })
 
+            if str(lop_da_dk.mon_hoc_id) == str(lop_check.mon_hoc_id):
+                return jsonify({
+                    'status': 400,
+                    'err_msg': f'Bạn đã xác nhận đăng ký môn {lop_da_dk.mon_hoc.name} này rồi!'
+                })
         cart[new_id] = {
             "id": new_id,
             "name": new_name,
@@ -125,13 +130,18 @@ def register_route(app):
     @app.route("/api/xoa_mon_da_dang_ky/<int:id>", methods=['DELETE'])
     @login_required
     def api_xoa_mon_da_dang_ky(id):
+        #Không được hủy sau 2 tuần
         if datetime.now() > NGAY_BAT_DAU_HK + timedelta(weeks=2):
-            return jsonify({'status': 400, 'message': 'Quá thời hạn 2 tuần!'})
+            return jsonify({'status': 400, 'message': 'Quá thời hạn 2 tuần để hủy môn!'})
 
         phieu_dk = DangKy.query.get(id)
 
         if not phieu_dk:
             return jsonify({'status': 404, 'message': 'Không tìm thấy dữ liệu đăng ký này!'})
+
+        # Chỉ sinh viên đăng ký mới được huỷ
+        if phieu_dk.sinh_vien_id != current_user.id:
+            return jsonify({'status': 403, 'message': 'Không có quyền hủy!'})
 
         ds_da_dk = DangKy.query.filter_by(sinh_vien_id=current_user.id).all()
         tong_tc_hien_tai = sum(dk.lop_hoc_phan.mon_hoc.so_tin_chi for dk in ds_da_dk)
@@ -142,18 +152,7 @@ def register_route(app):
                 'message': f'Quy định tối thiểu 12 TC. Hiện tại bạn có {tong_tc_hien_tai} TC, xóa môn này sẽ không đủ điều kiện.'
             })
 
-        # 1. Chỉ sinh viên đăng ký mới được huỷ
-        if phieu_dk.sinh_vien_id != current_user.id:
-            return jsonify({'status': 403, 'message': 'Không có quyền hủy!'})
-
-        # 2. Không được huỷ sau 2 tuần bắt đầu học kỳ
-
-
-        if datetime.now() > NGAY_BAT_DAU_HK + timedelta(weeks=2):
-            return jsonify({'status': 400, 'message': 'Quá thời hạn 2 tuần để hủy môn!'})
-
-        # 3. Kiểm tra đã thi giữa kỳ chưa
-
+        # Kiểm tra đã thi giữa kỳ chưa
         if phieu_dk.lop_hoc_phan.da_thi_giua_ky:
             return jsonify({'status': 400, 'message': 'Môn đã có điểm giữa kỳ, không thể hủy!'})
 
@@ -290,5 +289,6 @@ def load_user(user_id):
 
 
 if __name__ == "__main__":
+    from ecourse import admin
     register_route(app=app)
     app.run(debug=True)
