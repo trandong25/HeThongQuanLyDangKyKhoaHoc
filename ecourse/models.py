@@ -24,7 +24,7 @@ class User(BaseModel,UserMixin):
     password = Column(String(50), nullable=False)
     user_role = Column(Enum(UserRole), default=UserRole.SINHVIEN)
 
-    # 1 Sinh viên có nhiều lượt đăng ký
+    # 1 sinh viên có nhiều lượt đăng ký
     ds_dang_ky = relationship('DangKy', backref='sinh_vien', lazy=True)
 
     def __str__(self):
@@ -77,7 +77,6 @@ class DangKy(BaseModel):
 
     # dùng cho ràng buộc không đăng ký môn đã học
     diem_tong_ket = Column(Float, nullable=True)
-
 
 if __name__ == '__main__':
     with app.app_context():

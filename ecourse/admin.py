@@ -4,7 +4,7 @@ from ecourse import app, dao
 from flask_admin.contrib.sqla import ModelView
 from wtforms.validators import ValidationError
 from ecourse.dao import count_lop_by_mon_hoc
-from ecourse.models import MonHoc, LopHocPhan, UserRole, DangKy
+from ecourse.models import MonHoc, LopHocPhan, UserRole, DangKy, HocKy
 from ecourse import db
 from flask_admin import BaseView,expose
 from flask import redirect, flash, url_for, request
@@ -39,8 +39,10 @@ class LopHocPhanView(AdminView):
     form_columns = ['mon_hoc', 'hoc_ky', 'phong_hoc', 'thu', 'ca_hoc', 'so_luong_max', 'da_thi_giua_ky', 'active']
 
     def on_model_change(self, form, model, is_created):
-        if model.so_luong_max > 50:
-            raise ValueError("Số lượng sinh viên tối đa là 50")
+        if model.so_luong_max > 50 or model.so_luong_max <= 0:
+            raise ValueError("Số lượng sinh viên phải từ 1 đến 50")
+        if model.ca_hoc < 1 or model.ca_hoc > 4:
+            raise ValueError("Ca học chỉ từ 1 đến 4!")
 
         phong_chuan = model.phong_hoc.strip().upper() if model.phong_hoc else ""
         model.phong_hoc = phong_chuan
@@ -88,6 +90,7 @@ class ThongKeView(BaseView):
 
 admin = Admin(app=app, name="e-Course's Admin",template_mode='bootstrap4', index_view=MyAdminIndexView())
 admin.add_view(AdminView(MonHoc,db.session, name= 'Môn Học'))
+admin.add_view(AdminView(HocKy,db.session, name= 'Học Kỳ'))
 admin.add_view(LopHocPhanView(LopHocPhan,db.session, name = 'Lớp học phần'))
 admin.add_view(ThongKeView(name='Thống kê'))
 admin.add_view(LogoutView(name='Đăng xuất'))
