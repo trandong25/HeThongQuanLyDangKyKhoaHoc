@@ -87,7 +87,7 @@ def register_route(app):
             if str(item.get('mon_hoc_id')) == str(lop_check.mon_hoc_id):
                 return jsonify({
                     'status': 400,
-                    'err_msg': f'Môn {lop_check.mon_hoc.name} đã có trong danh sách !'
+                    'err_msg': f'Môn {lop_check.mon_hoc.name} có trong danh sách !'
                 })
 
         # trùng lịch học
