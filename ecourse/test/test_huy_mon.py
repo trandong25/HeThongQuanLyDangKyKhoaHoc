@@ -95,6 +95,11 @@ def test_huy_mon_da_thi_giua_ky(test_client, test_session, mock_login_user, samp
 
 
 def test_xoa_mon_khong_ton_tai(test_client, mock_login_user,mocker,sample_student):
+    # bo sung time
+    fake_now = real_datetime(2020, 1, 1)
+    datetime_mock = mocker.patch("ecourse.index.datetime")
+    datetime_mock.now.return_value = fake_now
+
     res = test_client.delete("/api/xoa_mon_da_dang_ky/9999")
     data = res.get_json()
 
@@ -102,7 +107,12 @@ def test_xoa_mon_khong_ton_tai(test_client, mock_login_user,mocker,sample_studen
     assert "Không tìm thấy" in data['message']
 
 
-def test_xoa_mon_khong_chinh_chu(test_client, test_session, mock_login_user, sample_lop_hoc_phan,sample_student):
+def test_xoa_mon_khong_chinh_chu(test_client, test_session, mock_login_user, sample_lop_hoc_phan,sample_student,mocker):
+    # bo sung time
+    fake_now = real_datetime(2020, 1, 1)
+    datetime_mock = mocker.patch("ecourse.index.datetime")
+    datetime_mock.now.return_value = fake_now
+
     dk1 = DangKy(sinh_vien_id=99, lop_hoc_phan_id=sample_lop_hoc_phan[0].id)
     test_session.add(dk1)
     test_session.commit()
