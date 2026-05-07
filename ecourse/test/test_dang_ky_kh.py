@@ -180,36 +180,6 @@ def test_trung_lop(sample_lop_hoc_phan, sample_student, mock_login_user):
     assert len(ds) == 1
     assert ds[0].lop_hoc_phan_id == l1.id
 
-# def test_vuot_25_tin_chi(sample_lop_hoc_phan, test_session, mock_login_user):
-#     l1, l2 = sample_lop_hoc_phan[0], sample_lop_hoc_phan[1]
-#
-#     m = MonHoc.query.get(l1.mon_hoc_id)
-#     m.so_tin_chi = 24
-#     test_session.commit()
-#
-#     dang_ky_lop(l1.id)
-#
-#     with pytest.raises(ValueError):
-#         dang_ky_lop(l2.id)
-
-
-# def test_dang_ky_dung_25_tin_chi(sample_lop_hoc_phan, test_session, mock_login_user):
-#     l1 = sample_lop_hoc_phan[0]
-#     l2 = sample_lop_hoc_phan[1]
-#
-#     m1 = MonHoc.query.get(l1.mon_hoc_id)
-#     m2 = MonHoc.query.get(l2.mon_hoc_id)
-#
-#     m1.so_tin_chi = 13
-#     m2.so_tin_chi = 12
-#     test_session.commit()
-#
-#     dang_ky_lop(l1.id)
-#     dang_ky_lop(l2.id)  # tổng = 25
-#
-#     assert DangKy.query.count() == 2
-
-
 @pytest.mark.parametrize("tin_chi_1, tin_chi_2, expected_exception", [
     (24, 3, True),
     (13, 12, False),

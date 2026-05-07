@@ -152,6 +152,7 @@ def count_lop_by_mon_hoc():
     ).join(LopHocPhan, LopHocPhan.mon_hoc_id == MonHoc.id,isouter=True
     ).group_by(MonHoc.id, MonHoc.name).all()
 
+
 def count_sv_by_lop():
     return (db.session.query(LopHocPhan.id, MonHoc.name,func.count(DangKy.sinh_vien_id)).join(MonHoc, MonHoc.id == LopHocPhan.mon_hoc_id)
             .join(DangKy, DangKy.lop_hoc_phan_id == LopHocPhan.id, isouter=True)

@@ -1,6 +1,9 @@
 import pytest
 from flask import Flask
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from ecourse import db, login_manager
+from ecourse.index import register_route
 
 
 def create_app():
@@ -13,7 +16,6 @@ def create_app():
 
     login_manager.init_app(app)
 
-    from ecourse.index import register_route
     register_route(app)
 
     return app
@@ -34,3 +36,11 @@ def test_client(test_app):
 def test_session(test_app):
     yield db.session
     db.session.rollback()
+
+
+@pytest.fixture
+def driver():
+    service = Service(executable_path='../.venv/chromedriver.exe')
+    driver = webdriver.Chrome(service=service)
+    yield driver
+    driver.quit()
