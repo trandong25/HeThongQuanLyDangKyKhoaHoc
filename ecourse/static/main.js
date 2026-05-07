@@ -1,28 +1,28 @@
-function dangKyMonHoc(lopHocPhanId){
-    if(confirm("Bạn có chắc chắn muốn đăng ký lớp học phần này không?")){
-        fetch('/api/dang-ky',{
-            method: 'POST',
-            headers:{
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                'lop_hoc_phan_id': lopHocPhanId
-            })
-        }).then(response => response.json())
-        .then(data =>{
-            if (data.status === 200){
-                location.reload();
-            }
-            else{
-                alert("Không thể đăng ký" + data.err_msg);
-            }
-        })
-        .catch(error => {
-            console.error("Error: "+ error);
-            alert("Đã xảy ra lỗi")
-        })
-    }
-}
+//function dangKyMonHoc(lopHocPhanId){
+//    if(confirm("Bạn có chắc chắn muốn đăng ký lớp học phần này không?")){
+//        fetch('/api/dang-ky',{
+//            method: 'POST',
+//            headers:{
+//                'Content-Type': 'application/json'
+//            },
+//            body: JSON.stringify({
+//                'lop_hoc_phan_id': lopHocPhanId
+//            })
+//        }).then(response => response.json())
+//        .then(data =>{
+//            if (data.status === 200){
+//                location.reload();
+//            }
+//            else{
+//                alert("Không thể đăng ký" + data.err_msg);
+//            }
+//        })
+//        .catch(error => {
+//            console.error("Error: "+ error);
+//            alert("Đã xảy ra lỗi")
+//        })
+//    }
+//}
 
 
 function chonMonHoc(id, name, tinChi,thu,caHoc,phongHoc,btnElement) {
@@ -72,21 +72,19 @@ function xoaMonHoc(id) {
         .then(res => res.json())
         .then(data => {
             if (data.status === 200) {
+            confirm(data.message)
                 location.reload();
             } else {
                 alert("Có lỗi xảy ra: " + data.err_msg);
             }
+        })
+        .catch(error => {
+            console.error("Lỗi:", error);
+            alert("Lỗi hệ thống!");
         });
     }
 }
-function xoaMonHocDaDangKy(id, tinChiMonNay,TONG_TC_DANG_CO,tinChiToiThieu) {
-    // 1. Kiểm tra ràng buộc TỐI THIỂU 12 TÍN CHỈ
-    if ((TONG_TC_DANG_CO - tinChiMonNay) < tinChiToiThieu) {
-        alert(`KHÔNG THỂ HỦY MÔN!\nTheo quy định, bạn phải có tối thiểu ${tinChiToiThieu} TC. Nếu hủy môn này, bạn chỉ còn ${TONG_TC_DANG_CO - tinChiMonNay} TC. Vui lòng đăng ký thêm môn khác trước khi hủy môn này.`);
-        return; // Dừng luôn, không gửi request lên server
-    }
-
-    // 2. Nếu đủ điều kiện thì mới hỏi xác nhận
+function xoaMonHocDaDangKy(id, tinChiMonNay, TONG_TC_DANG_CO, tinChiToiThieu) {
     if (confirm("Bạn có chắc chắn muốn HỦY ĐĂNG KÝ môn học này?")) {
         fetch('/api/xoa_mon_da_dang_ky/' + id, {
             method: 'DELETE'
@@ -94,11 +92,14 @@ function xoaMonHocDaDangKy(id, tinChiMonNay,TONG_TC_DANG_CO,tinChiToiThieu) {
         .then(res => res.json())
         .then(data => {
             if (data.status === 200) {
-                alert("Đã hủy môn học thành công!");
                 location.reload();
             } else {
-                alert("Lỗi: " + data.message);
+                alert(data.message);
             }
+        })
+        .catch(error => {
+            console.error("Lỗi:", error);
+            alert("Lỗi hệ thống! Vui lòng thử lại.");
         });
     }
 }

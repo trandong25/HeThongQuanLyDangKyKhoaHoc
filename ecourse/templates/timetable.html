@@ -15,47 +15,50 @@
     {% set cac_ca = [1, 2, 3, 4] %}
 
     <div class="table-responsive shadow-sm rounded-3">
-        <table class="table table-bordered text-center align-middle mb-0 bg-white" style="table-layout: fixed; min-width: 1000px;">
+        <table class="table table-bordered text-center align-middle mb-0 bg-white"
+               style="table-layout: fixed; min-width: 1000px;">
             <thead class="table-primary text-center align-middle">
-    <tr>
-        <th style="width: 10%;" class="bg-primary text-white border-primary">Ca \ Thứ</th>
-        {% for thu in cac_thu %}
-        <th style="width: 15%;" class="bg-primary text-white border-primary py-3 fs-5">Thứ {{ thu }}</th>
-        {% endfor %}
-    </tr>
-</thead>
+            <tr>
+                <th style="width: 10%;" class="bg-primary text-white border-primary">Ca \ Thứ</th>
+                {% for thu in cac_thu %}
+                <th style="width: 15%;" class="bg-primary text-white border-primary py-3 fs-5">Thứ {{ thu }}</th>
+                {% endfor %}
+            </tr>
+            </thead>
             <tbody>
-                {% for ca in cac_ca %}
-                <tr>
-                    <td class="fw-bold bg-light text-success fs-5 py-4">Ca {{ ca }}</td>
+            {% for ca in cac_ca %}
+            <tr>
+                <td class="fw-bold bg-light text-success fs-5 py-4">Ca {{ ca }}</td>
 
-                    {% for thu in cac_thu %}
-                    <td class="p-2" style="height: 120px;">
+                {% for thu in cac_thu %}
+                <td class="p-2" style="height: 120px;">
 
-                        {# Thuật toán dò tìm: Kiểm tra xem có môn nào khớp với Thứ và Ca hiện tại không #}
-                        {% for lop in lop_da_xac_nhan %}
-                            {% if lop.thu|string == thu|string and lop.ca_hoc|string == ca|string %}
 
-                                <div class="bg-white border border-primary border-1 shadow-sm rounded-3 p-2 h-100 d-flex flex-column justify-content-center"
-     style="transition: transform 0.2s; cursor: default;"
-     onmouseover="this.style.transform='scale(1.05)'"
-     onmouseout="this.style.transform='scale(1)'">
+                    {% for lop in lop_da_xac_nhan %}
+                    {% if lop.thu|string == thu|string and lop.ca_hoc|string == ca|string %}
 
-    <div class="fw-bold text-primary mb-2" style="font-size: 0.95rem;">{{ lop.mon_hoc.name }}</div>
+                    <div class="bg-white border border-primary border-1 shadow-sm rounded-3 p-2 h-100 d-flex flex-column justify-content-center"
+                         style="transition: transform 0.2s; cursor: default;"
+                         onmouseover="this.style.transform='scale(1.05)'"
+                         onmouseout="this.style.transform='scale(1)'">
 
-    <div class="small text-dark fw-bold"><i class="fas fa-map-marker-alt text-danger me-1"></i>P. {{ lop.phong_hoc }}</div>
-    <div class="small text-muted mt-1" style="font-size: 0.75rem;">Mã LHP: {{ lop.id }}</div>
+                        <div class="fw-bold text-primary mb-2" style="font-size: 0.95rem;">{{ lop.mon_hoc.name }}</div>
 
-</div>
+                        <div class="small text-dark fw-bold"><i class="fas fa-map-marker-alt text-danger me-1"></i>P. {{
+                            lop.phong_hoc }}
+                        </div>
+                        <div class="small text-muted mt-1" style="font-size: 0.75rem;">Mã LHP: {{ lop.id }}</div>
 
-                            {% endif %}
-                        {% endfor %}
+                    </div>
 
-                    </td>
+                    {% endif %}
                     {% endfor %}
 
-                </tr>
+                </td>
                 {% endfor %}
+
+            </tr>
+            {% endfor %}
             </tbody>
         </table>
     </div>

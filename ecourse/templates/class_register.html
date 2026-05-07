@@ -15,7 +15,8 @@
     {% if history %}
     <div class="alert alert-info d-flex justify-content-between align-items-center shadow-sm">
         <div>
-            <i class="fas fa-check-circle me-2"></i><strong>Tổng tín chỉ đã đăng ký : <span class="text-danger fs-5">{{ tc_db.tong }}</span> TC</strong>
+            <i class="fas fa-check-circle me-2"></i><strong>Tổng tín chỉ đã đăng ký :
+            <span class="text-danger fs-5">{{ tc_db.tong }}</span> TC</strong>
         </div>
 
     </div>
@@ -119,7 +120,7 @@
                         </span>
                     </h5>
                     {% if tong_tc < TIN_CHI_TOI_THIEU %}
-                        <small class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>Bạn cần đăng ký thêm {{ 12 - tong_tc }} tín chỉ nữa.</small>
+                        <small class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>Bạn cần đăng ký thêm {{ TIN_CHI_TOI_THIEU - tong_tc }} tín chỉ nữa.</small>
                     {% else %}
                         <small class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Đã đủ điều kiện xác nhận nhập học.</small>
                     {% endif %}
@@ -129,7 +130,9 @@
                     {% if tong_tc < TIN_CHI_TOI_THIEU %}
                         <button type="button" class="btn btn-secondary disabled w-100 py-2">Chưa đủ điều kiện xác nhận</button>
                     {% else %}
-                        <button type="button" onclick="checkOut()" class="btn btn-success fw-bold w-100 py-2 fs-5 shadow"><i class="fas fa-check-circle me-2"></i>XÁC NHẬN NHẬP HỌC</button>
+                        <button type="button" onclick="checkOut()" class="btn btn-success fw-bold w-100 py-2 fs-5 shadow">
+                            <i class="fas fa-check-circle me-2"></i>XÁC NHẬN NHẬP HỌC
+                        </button>
                     {% endif %}
                 </div>
             </div>
