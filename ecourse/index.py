@@ -192,15 +192,22 @@ def register_route(app):
 
 
         # rang buoc huy mon sau 2 tuan hoc
-        huy_mon = True
+        huy_mon_da_dang_ky = True
         if datetime.now() > HAN_HUY_MON:
-            huy_mon = False
+            huy_mon_da_dang_ky = False
+        
+        # het han dang ky mon
+        huy_mon_ghi_danh = True
+        if datetime.now() > HAN_DANG_KY:
+            huy_mon_ghi_danh = False
 
         return render_template('class_register.html',
                                lop_cho=lop_cho,
                                tong_tc=tong_tc,
                                history=danh_sach_mon_da_dang_ky,
-                               huy_mon=huy_mon,
+                               huy_mon_da_dang_ky=huy_mon_da_dang_ky,
+                               huy_mon_ghi_danh=huy_mon_ghi_danh,
+                               HAN_DANG_KY=HAN_DANG_KY,
                                TIN_CHI_TOI_THIEU=TIN_CHI_TOI_THIEU)
 
     @app.route('/timetable')

@@ -44,17 +44,19 @@
                     <td>Thứ {{ h.lop_hoc_phan.thu }} - Ca {{ h.lop_hoc_phan.ca_hoc }}</td>
                     <td>{{ h.lop_hoc_phan.phong_hoc }}</td>
                     <td class="small">{{ h.ngay_dang_ky.strftime('%d/%m/%Y %H:%M') if h.ngay_dang_ky else '' }}</td>
-                    {%if not huy_mon%}
-                    <td>
-                        <button class="btn btn-sm btn-secondary disabled" title="Đã qua 2 tuần đầu học kỳ, không thể hủy">
-                            <i class="fas fa-lock me-1"></i>Đã khóa hủy
-                        </button>
-                    </td>
-                    {%else%}
+                    {%if huy_mon_da_dang_ky%}
+
+
                     <td>
                         <button class="btn btn-sm btn-outline-danger fw-bold"
                                 onclick="xoaMonHocDaDangKy({{ h.id }}, {{ h.lop_hoc_phan.mon_hoc.so_tin_chi }},{{tc_db.tong}},{{TIN_CHI_TOI_THIEU}})">
                             <i class="fas fa-trash-alt me-1"></i>Hủy môn
+                        </button>
+                    </td>
+                    {%else%}
+                    <td>
+                        <button class="btn btn-sm btn-secondary disabled" title="Đã qua 2 tuần đầu học kỳ, không thể hủy">
+                            <i class="fas fa-lock me-1"></i>Đã khóa hủy
                         </button>
                     </td>
                     {%endif%}
@@ -101,9 +103,15 @@
                         <td><i class="far fa-clock text-muted me-2"></i>Thứ {{ lop.thu }} ( Ca {{ lop.ca_hoc }} )</td>
                         <td><i class="fas fa-map-marker-alt text-muted me-2"></i>{{ lop.phong_hoc }}</td>
                         <td>
+                            {%if huy_mon_ghi_danh%}
                             <button onclick="xoaMonHoc('{{ lop.id }}')" class="btn btn-sm btn-danger">
                                 <i class="fas fa-times"></i> Xóa
                             </button>
+                            {%else%}
+                            <button onclick="xoaMonHoc('{{ lop.id }}')" class="btn btn-sm btn-secondary disabled">
+                                <i class="fas fa-times"></i>Đã khóa
+                            </button>
+                            {%endif%}
                         </td>
                     </tr>
                     {% endfor %}
@@ -129,6 +137,8 @@
                 <div class="col-md-5 text-end">
                     {% if tong_tc < TIN_CHI_TOI_THIEU %}
                         <button type="button" class="btn btn-secondary disabled w-100 py-2">Chưa đủ điều kiện xác nhận</button>
+                    {% elif not huy_mon_ghi_danh %}
+                        <button type="button" class="btn btn-secondary disabled w-100 py-2">Hết hạn đăng ký</button>
                     {% else %}
                         <button type="button" onclick="checkOut()" class="btn btn-success fw-bold w-100 py-2 fs-5 shadow">
                             <i class="fas fa-check-circle me-2"></i>XÁC NHẬN NHẬP HỌC
