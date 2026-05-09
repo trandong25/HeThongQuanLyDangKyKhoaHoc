@@ -25,6 +25,6 @@ class BasePage:
             alert = self.driver.switch_to.alert
             text = alert.text
             alert.accept()
-            return text
+            return text.lower()
         except:
             return None

@@ -1,3 +1,4 @@
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from ecourse.test.pages.BasePage import BasePage
 
@@ -9,7 +10,8 @@ class HomePage(BasePage):
     SEARCH_BUTTON = (By.CSS_SELECTOR, "form button")
 
     CLASS_ROWS = (By.CSS_SELECTOR, "table tbody tr")
-    BTN_REGISTER = (By.CSS_SELECTOR, "table tbody tr button")
+    BTN_REGISTER = (By.CSS_SELECTOR, "table tbody tr td:last-child button:not(.disabled)")
+    # BTN_REGISTER = (By.CSS_SELECTOR, "table tbody tr button")
 
     PAGINATION = (By.CSS_SELECTOR, ".pagination li")
 
@@ -24,7 +26,21 @@ class HomePage(BasePage):
         return self.finds(*self.CLASS_ROWS)
 
     def add_first_course(self):
-        self.click(*self.BTN_REGISTER)
+        # self.click(*self.BTN_REGISTER)
+        btns = self.finds(*self.BTN_REGISTER)
+
+        if len(btns) == 0:
+            return False
+
+        btn = btns[0]
+
+        self.driver.execute_script("window.scrollTo(0, 500)")
+
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", btn)
+
+        self.driver.execute_script("arguments[0].click();", btn)
+
+        return True
 
     def count_classes(self):
         return len(self.finds(*self.CLASS_ROWS))

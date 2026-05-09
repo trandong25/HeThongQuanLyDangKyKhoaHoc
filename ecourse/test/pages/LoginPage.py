@@ -7,7 +7,8 @@ class LoginPage(BasePage):
 
     USERNAME = (By.NAME, "username")
     PASSWORD = (By.NAME, "password")
-    BTN_LOGIN = (By.CSS_SELECTOR, "button[type='submit']")
+
+    BTN_LOGIN = (By.CSS_SELECTOR, "div.card-body > form > button")
 
     ERROR_MSG = (By.CLASS_NAME, "alert-danger")
 

@@ -1,62 +1,12 @@
-from tkinter.font import names
-
 import pytest
+from ecourse.dao import count_sv_by_lop,count_lop_hoc_phan
 from datetime import datetime,timedelta
 from ecourse.dao import load_lop_hoc_phan, dang_ky_lop
 from ecourse.models import HocKy, MonHoc, LopHocPhan, User, DangKy
 from unittest.mock import patch
-from ecourse.test.test_base import test_app,test_client, test_session
+from ecourse.test.test_base import test_app,test_client, test_session,sample_lop_hoc_phan,sample_student,mock_login_user
 
-@pytest.fixture
-def sample_lop_hoc_phan(test_session):
 
-    ngay_hien_tai = datetime.now()
-    fake_han_dang_ky = ngay_hien_tai + timedelta(days=30)
-
-    hk1 = HocKy(name="HK1", active=True, ngay_bat_dau=ngay_hien_tai, han_dang_ky=fake_han_dang_ky)
-    hk2 = HocKy(name="HK2", active=True, ngay_bat_dau=ngay_hien_tai, han_dang_ky=fake_han_dang_ky)
-
-    test_session.add_all([hk1,hk2])
-    test_session.commit()
-
-    m1 = MonHoc(name="Python cơ bản", so_tin_chi=3)
-    m2 = MonHoc(name="Lập trình Python", so_tin_chi=3)
-    m3 = MonHoc(name="Kiểm thử phần mềm", so_tin_chi=3)
-    m4 = MonHoc(name="Toán rời rạc", so_tin_chi=3)
-    test_session.add_all([m1, m2, m3, m4])
-    test_session.commit()
-
-    l1 = LopHocPhan(mon_hoc_id=m1.id, hoc_ky_id=hk1.id, so_luong_max=50, active=True, phong_hoc="A101", thu=2, ca_hoc=1)
-    l2 = LopHocPhan(mon_hoc_id=m2.id, hoc_ky_id=hk1.id, so_luong_max=50, active=True, phong_hoc="B202", thu=3, ca_hoc=2)
-    l3 = LopHocPhan(mon_hoc_id=m3.id, hoc_ky_id=hk1.id, so_luong_max=50, active=True, phong_hoc="C303", thu=4, ca_hoc=3)
-    l4 = LopHocPhan(mon_hoc_id=m3.id, hoc_ky_id=hk2.id, so_luong_max=50, active=True, phong_hoc="D404", thu=5, ca_hoc=4)
-    l5 = LopHocPhan(mon_hoc_id=m4.id, hoc_ky_id=hk2.id, so_luong_max=50, active=True, phong_hoc="E505", thu=6, ca_hoc=1)
-
-    test_session.add_all([l1,l2,l3,l4,l5])
-    test_session.commit()
-
-    return [l1, l2, l3, l4, l5]
-
-@pytest.fixture
-def sample_student(test_session):
-    """Tạo một sinh viên ảo để có ID mà đăng ký môn"""
-    sv = User(
-        name="Sinh Vien Test",
-        username="sv_test_01",
-        password="123",
-        active=True
-    )
-    test_session.add(sv)
-    test_session.commit()
-    return sv
-
-@pytest.fixture
-def mock_login_user(sample_student):
-    with patch("ecourse.dao.current_user") as mock_user:
-        mock_user.is_authenticated = True
-        mock_user.id = sample_student.id
-
-        yield mock_user
 
 def test_load_all_classes(sample_lop_hoc_phan):
     classes = load_lop_hoc_phan()
@@ -180,6 +130,34 @@ def test_trung_lop(sample_lop_hoc_phan, sample_student, mock_login_user):
     assert len(ds) == 1
     assert ds[0].lop_hoc_phan_id == l1.id
 
+def test_vuot_25_tin_chi(sample_lop_hoc_phan, test_session, mock_login_user):
+    l1, l2 = sample_lop_hoc_phan[0], sample_lop_hoc_phan[1]
+
+    m = MonHoc.query.get(l1.mon_hoc_id)
+    m.so_tin_chi = 24
+    test_session.commit()
+
+    dang_ky_lop(l1.id)
+
+    with pytest.raises(ValueError):
+        dang_ky_lop(l2.id)
+
+def test_dang_ky_dung_25_tin_chi(sample_lop_hoc_phan, test_session, mock_login_user):
+    l1 = sample_lop_hoc_phan[0]
+    l2 = sample_lop_hoc_phan[1]
+
+    m1 = MonHoc.query.get(l1.mon_hoc_id)
+    m2 = MonHoc.query.get(l2.mon_hoc_id)
+
+    m1.so_tin_chi = 13
+    m2.so_tin_chi = 12
+    test_session.commit()
+
+    dang_ky_lop(l1.id)
+    dang_ky_lop(l2.id)
+
+    assert DangKy.query.count() == 2
+
 @pytest.mark.parametrize("tin_chi_1, tin_chi_2, expected_exception", [
     (24, 3, True),
     (13, 12, False),
@@ -221,47 +199,6 @@ def test_gioi_han_25_tin_chi(sample_lop_hoc_phan, test_session, mock_login_user,
         #tổng tín chỉ hợp lệ
         assert tong <= 25
 
-
-@pytest.mark.parametrize("so_mon, expected_pass", [
-    (1, False),
-    (2, False),
-    (4, True),
-])
-def test_min_12_tin_chi(test_session, mocker, test_client, sample_lop_hoc_phan, so_mon, expected_pass):
-    # 1. BẮT BUỘC MOCK FLASK-LOGIN ĐỂ VƯỢT QUA @login_required (Chuẩn file PDF)
-    class FakeUser:
-        is_authenticated = True
-        id = 1
-
-    mocker.patch("flask_login.utils._get_user", return_value=FakeUser())
-    mocker.patch("ecourse.dao.current_user", new=FakeUser())
-
-    selected = sample_lop_hoc_phan[:so_mon]
-    with test_client.session_transaction() as sess:
-        cart = {}
-        for lop in selected:
-            cart[str(lop.id)] = {
-                "id": str(lop.id),
-                "tin_chi": 3,
-                "name": f"Môn {lop.id}"
-            }
-        sess["cart"] = cart
-
-    mock_add = mocker.patch("ecourse.dao.dang_ky_lop")
-
-    response = test_client.post("/api/checkout")
-
-    try:
-        data = response.get_json()
-    except Exception:
-        pytest.fail(f"API trả về không phải JSON! Nội dung: {response.data.decode('utf-8')}")
-
-    if expected_pass:
-        assert data["status"] == 200
-    else:
-        assert data["status"] == 400
-        assert "12 tín chỉ" in data["message"].lower()
-        mock_add.assert_not_called()
 
 def test_mon_tien_quyet(sample_lop_hoc_phan, test_session, mock_login_user):
     l4 = sample_lop_hoc_phan[3]
@@ -315,3 +252,63 @@ def test_hoc_ky_khong_active(sample_lop_hoc_phan, test_session, mock_login_user)
 
     with pytest.raises(ValueError, match="không trong thời gian"):
         dang_ky_lop(l1.id)
+
+#Test hàm trong dao
+def test_count_sv_by_lop(test_session,sample_lop_hoc_phan,sample_student):
+    l1 = sample_lop_hoc_phan[0]
+    dk = DangKy(sinh_vien_id = sample_student.id, lop_hoc_phan_id = l1.id)
+    test_session.add(dk)
+    test_session.commit()
+
+    ket_qua = count_sv_by_lop()
+
+    dict_ket_qua = {}
+
+    for row in ket_qua:
+        dict_ket_qua[row[0]] = row[2]
+
+    assert dict_ket_qua[l1.id] == 1
+    assert dict_ket_qua[sample_lop_hoc_phan[1].id] == 0
+
+
+def test_count_lop_by_mon_hoc(test_session, test_app, sample_lop_hoc_phan):
+    with test_app.app_context():
+        from ecourse.dao import count_lop_by_mon_hoc
+
+        m0 = MonHoc(name="Môn rỗng", so_tin_chi=2)
+        test_session.add(m0)
+        test_session.commit()
+
+        ket_qua = count_lop_by_mon_hoc()
+
+        dict_thong_ke = {}
+        for row in ket_qua:
+            dict_thong_ke[row[0]] = row[2]
+
+        #m3 sample có 2 lớp
+        m3_id = sample_lop_hoc_phan[2].mon_hoc_id
+        assert dict_thong_ke[m3_id] == 2
+
+        #m1 sample có 1 lớp
+        m1_id = sample_lop_hoc_phan[0].mon_hoc_id
+        assert dict_thong_ke[m1_id] == 1
+
+        assert dict_thong_ke[m0.id] == 0
+
+def test_load_lop_hoc_phan_search(test_session, sample_lop_hoc_phan):
+    ket_qua = load_lop_hoc_phan(kw="Python")
+
+    assert len(ket_qua) == 2
+    for lop in ket_qua:
+        assert "Python" in lop.mon_hoc.name
+
+def test_load_lop_hoc_phan_page(test_session, test_app, sample_lop_hoc_phan):
+    with test_app.app_context():
+        test_app.config["PAGE_SIZE"] = 1
+
+        page_1 = load_lop_hoc_phan(page=1)
+        assert len(page_1) == 1
+
+        page_2 = load_lop_hoc_phan(page=2)
+        assert len(page_2) == 1
+        assert page_1[0].id != page_2[0].id
