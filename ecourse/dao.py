@@ -6,6 +6,7 @@ import hashlib
 from flask_login import current_user
 from datetime import datetime
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 def load_courses():
     return MonHoc.query.all()
@@ -92,7 +93,9 @@ def dang_ky_lop(lop_hoc_phan_id):
     if mon_da_hoc:
         raise ValueError("Bạn đã học và thi đạt môn này rồi")
 
-    cac_phieu_dk = DangKy.query.join(LopHocPhan).filter(
+    cac_phieu_dk = DangKy.query.join(LopHocPhan).options(
+        joinedload(DangKy.lop_hoc_phan).joinedload(LopHocPhan.mon_hoc)
+    ).filter(
         DangKy.sinh_vien_id == current_user.id,
         LopHocPhan.hoc_ky_id == lop.hoc_ky_id
     ).all()
