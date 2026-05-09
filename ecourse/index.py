@@ -38,6 +38,8 @@ def register_route(app):
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
+        if current_user.is_authenticated:
+            return redirect("/")
         error_msg = None
         if request.method.__eq__("POST"):
             username = request.form.get("username")
@@ -57,7 +59,7 @@ def register_route(app):
     def logout():
         logout_user()
         session.pop('cart', None)
-        return redirect("/")
+        return redirect("/login")
 
     @app.route('/api/dang_ky_tam', methods=['POST'])
     @login_required
