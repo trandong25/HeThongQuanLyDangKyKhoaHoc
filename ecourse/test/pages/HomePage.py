@@ -11,7 +11,6 @@ class HomePage(BasePage):
 
     CLASS_ROWS = (By.CSS_SELECTOR, "table tbody tr")
     BTN_REGISTER = (By.CSS_SELECTOR, "table tbody tr td:last-child button:not(.disabled)")
-    # BTN_REGISTER = (By.CSS_SELECTOR, "table tbody tr button")
 
     PAGINATION = (By.CSS_SELECTOR, ".pagination li")
 
