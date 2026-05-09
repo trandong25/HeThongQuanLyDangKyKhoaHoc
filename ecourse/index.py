@@ -54,7 +54,6 @@ def register_route(app):
 
         return render_template("login.html", error_msg=error_msg)
 
-
     @app.route("/logout")
     def logout():
         logout_user()
@@ -266,37 +265,37 @@ def register_route(app):
             return jsonify({'status': 500, 'message': 'Lỗi hệ thống: ' + str(e)})
 
 
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    error_msg = None
-    if request.method.__eq__("POST"):
-        password = request.form.get("password")
-        confirm = request.form.get("confirm")
+    @app.route("/register", methods=["GET", "POST"])
+    def register():
+        error_msg = None
+        if request.method.__eq__("POST"):
+            password = request.form.get("password")
+            confirm = request.form.get("confirm")
 
-        if password.__eq__(confirm):
+            if password.__eq__(confirm):
 
-            name = request.form.get('name')
-            username = request.form.get("username")
-            avatar = request.files.get('avatar')
-            file_path = None
+                name = request.form.get('name')
+                username = request.form.get("username")
+                avatar = request.files.get('avatar')
+                file_path = None
 
-            if dao.get_user_by_username(username):
-                error_msg = "Trùng username"
+                if dao.get_user_by_username(username):
+                    error_msg = "Trùng username"
+                else:
+                    if avatar:
+                        res = cloudinary.uploader.upload(avatar)
+                        file_path = res['secure_url']
+
+                    try:
+                        dao.add_user(name, username, password, avatar=file_path)
+                        return redirect('/login')
+                    except Exception as e:
+                        db.session.rollback()
+                        error_msg = "Hệ thống đang bị lỗi! Vui lòng quay lại sau!"
             else:
-                if avatar:
-                    res = cloudinary.uploader.upload(avatar)
-                    file_path = res['secure_url']
+                error_msg = "Mật khẩu không khớp!"
 
-                try:
-                    dao.add_user(name, username, password, avatar=file_path)
-                    return redirect('/login')
-                except Exception as e:
-                    db.session.rollback()
-                    error_msg = "Hệ thống đang bị lỗi! Vui lòng quay lại sau!"
-        else:
-            error_msg = "Mật khẩu không khớp!"
-
-    return render_template("register.html", error_msg=error_msg)
+        return render_template("register.html", error_msg=error_msg)
 
 
 @app.route("/user_information")
@@ -322,5 +321,6 @@ def load_user(user_id):
 
 if __name__ == "__main__":
     from ecourse import admin
+
     register_route(app=app)
     app.run(debug=True)
