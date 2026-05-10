@@ -1,6 +1,5 @@
 import time
 
-from selenium.webdriver.common.by import By
 
 from ecourse.test.pages.HomePage import HomePage
 from ecourse.test.pages.LoginPage import LoginPage
