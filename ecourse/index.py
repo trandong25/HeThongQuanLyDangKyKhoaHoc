@@ -131,7 +131,7 @@ def register_route(app):
     @app.route("/api/xoa_mon_da_dang_ky/<int:id>", methods=['DELETE'])
     @login_required
     def api_xoa_mon_da_dang_ky(id):
-        #Không được hủy sau 2 tuần
+        # Không được hủy sau 2 tuần
         if datetime.now() > NGAY_BAT_DAU_HK + timedelta(weeks=2):
             return jsonify({'status': 400, 'message': 'Quá thời hạn 2 tuần để hủy môn!'})
 
@@ -290,5 +290,7 @@ def load_user(user_id):
 
 
 if __name__ == "__main__":
+    from ecourse import admin
+
     register_route(app=app)
     app.run(debug=True)

@@ -42,6 +42,14 @@ def count_lop_hoc_phan(hk_id = None, kw = None):
 
     return query.count()
 
+def get_lop_hoc_phan_by_id(lop_phan_id):
+    return LopHocPhan.query.get(lop_phan_id)
+def get_hoc_ky_by_id(hoc_ky_id):
+    return HocKy.query.get(hoc_ky_id)
+def get_dang_ky_by_id(hoc_ky_id):
+    return DangKy.query.get(hoc_ky_id)
+
+
 def get_user_by_id(user_id):
     return User.query.get(user_id)
 def get_user_by_username(username):
