@@ -38,6 +38,7 @@ def test_trung_phong_fail(test_session):
     lop1 = LopHocPhan(
         mon_hoc_id=mon.id,
         hoc_ky_id=hk.id,
+        so_luong_max=40,
         phong_hoc="A101",
         thu=2,
         ca_hoc=1
@@ -48,6 +49,7 @@ def test_trung_phong_fail(test_session):
     lop2 = LopHocPhan(
         mon_hoc_id=mon.id,
         hoc_ky_id=hk.id,
+        so_luong_max=40,
         phong_hoc="A101",
         thu=2,
         ca_hoc=1
