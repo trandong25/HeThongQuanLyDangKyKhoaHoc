@@ -1,13 +1,14 @@
 import math
 from datetime import datetime, timedelta
-
 import cloudinary.uploader
 from flask_login import login_user, logout_user, current_user
 from werkzeug.utils import redirect
 from ecourse import login_manager, db
-from ecourse.config import NGAY_BAT_DAU_DANG_KY, NGAY_BAT_DAU_HK, TIN_CHI_TOI_THIEU, HAN_DANG_KY
+from ecourse.config import NGAY_BAT_DAU_DANG_KY, NGAY_BAT_DAU_HK, TIN_CHI_TOI_THIEU, HAN_DANG_KY, TIN_CHI_TOI_DA, \
+    HAN_HUY_MON
 from flask import render_template, session
-from ecourse.models import LopHocPhan, DangKy, HocKy
+from ecourse.dao import get_hoc_ky_by_id
+from ecourse.models import  DangKy
 from ecourse import app, dao
 from flask_login import login_required
 from flask import request, jsonify
@@ -30,9 +31,10 @@ def register_route(app):
                                NGAY_BAT_DAU_DANG_KY=NGAY_BAT_DAU_DANG_KY,
                                HAN_DANG_KY=HAN_DANG_KY,
                                TIN_CHI_TOI_THIEU=TIN_CHI_TOI_THIEU,
+                               TIN_CHI_TOI_DA=TIN_CHI_TOI_DA,
                                classes=classes,
                                pages=pages,
-                               curent_page=page)
+                               current_page=page)
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
@@ -65,14 +67,14 @@ def register_route(app):
         data = request.json
         # Chặn ghi danh lớp active
         new_id = str(data.get('id'))
-        lop_check = LopHocPhan.query.get(new_id)
 
+        lop_check = dao.get_lop_hoc_phan_by_id(new_id)
         if not lop_check:
             return jsonify({'status': 400, 'err_msg': 'Lớp học phần không tồn tại trên hệ thống!'})
         if not lop_check.active:
             return jsonify({'status': 400, 'err_msg': 'Lớp học phần này hiện đã bị khóa hoặc không mở đăng ký!'})
 
-        hoc_ky_check = HocKy.query.get(lop_check.hoc_ky_id)
+        hoc_ky_check = get_hoc_ky_by_id(lop_check.hoc_ky_id)
         if not hoc_ky_check or not hoc_ky_check.active:
             return jsonify(
                 {'status': 400, 'err_msg': 'Học kỳ của môn này hiện không trong thời gian cho phép đăng ký!'})
@@ -81,9 +83,15 @@ def register_route(app):
         new_thu = str(data.get('thu'))
         new_ca = str(data.get('ca_hoc'))
 
-        if new_id in cart:
-            return jsonify({'status': 400, 'err_msg': 'Môn này đã có trong danh sách!'})
+        # đăng ký trùng môn, trùng môn nhưng khác lịch học
+        for item in cart.values():
+            if str(item.get('mon_hoc_id')) == str(lop_check.mon_hoc_id):
+                return jsonify({
+                    'status': 400,
+                    'err_msg': f'Môn này đã có trong danh sách !'
+                })
 
+        # trùng lịch học
         for item in cart.values():
             if str(item['thu']) == new_thu and str(item['ca_hoc']) == new_ca:
                 return jsonify({
@@ -91,24 +99,30 @@ def register_route(app):
                     'err_msg': f'Trùng lịch! Thứ {new_thu} - Ca {new_ca} bạn đã chọn môn {item["name"]}.'
                 })
 
-        ds_da_dang_ky = DangKy.query.filter_by(sinh_vien_id=current_user.id).all()
-        for dk in ds_da_dang_ky:
-            lop_da_dk = dk.lop_hoc_phan
+        # kiểm tra môn đã đăng ký rồi
+        ds_da_dang_ky = dao.get_registered_classes(current_user.id)
+        for ds in ds_da_dang_ky:
+            lop_da_dang_ky = ds.lop_hoc_phan
 
-            if str(lop_da_dk.thu) == new_thu and str(lop_da_dk.ca_hoc) == new_ca:
+            # kiểm tra trùng lich
+            if str(lop_da_dang_ky.thu) == new_thu and str(lop_da_dang_ky.ca_hoc) == new_ca:
                 return jsonify({
                     'status': 400,
-                    'err_msg': f'Trùng lịch! Thứ {new_thu} - Ca {new_ca} bạn đã có lịch học môn {lop_da_dk.mon_hoc.name}.'
+                    'err_msg': f'Trùng lịch! Thứ {new_thu} - Ca {new_ca} bạn đã có lịch học môn {lop_da_dang_ky.mon_hoc.name}.'
                 })
 
-            if str(lop_da_dk.mon_hoc_id) == str(lop_check.mon_hoc_id):
+            # kiểm tra trùng môn
+            if str(lop_da_dang_ky.mon_hoc_id) == str(lop_check.mon_hoc_id):
                 return jsonify({
                     'status': 400,
-                    'err_msg': f'Bạn đã xác nhận đăng ký môn {lop_da_dk.mon_hoc.name} này rồi!'
+                    'err_msg': f'Bạn đã xác nhận đăng ký môn {lop_da_dang_ky.mon_hoc.name} này rồi!'
                 })
+
+        # thêm vào giỏ tạm
         cart[new_id] = {
             "id": new_id,
             "name": new_name,
+            "mon_hoc_id": str(lop_check.mon_hoc_id),
             "tin_chi": data.get('tin_chi'),
             "thu": new_thu,
             "ca_hoc": new_ca,
@@ -124,7 +138,8 @@ def register_route(app):
         cart = session.get('cart', {})
         if id in cart:
             del cart[id]
-            session['cart'] = cart
+
+            session.modified = True
             return jsonify({'status': 200, 'message': 'Đã xóa thành công'})
         return jsonify({'status': 400, 'err_msg': 'Môn học không tồn tại trong danh sách'})
 
@@ -132,32 +147,34 @@ def register_route(app):
     @login_required
     def api_xoa_mon_da_dang_ky(id):
         # Không được hủy sau 2 tuần
-        if datetime.now() > NGAY_BAT_DAU_HK + timedelta(weeks=2):
+        if datetime.now() > HAN_HUY_MON:
             return jsonify({'status': 400, 'message': 'Quá thời hạn 2 tuần để hủy môn!'})
 
-        phieu_dk = DangKy.query.get(id)
+        phieu_dang_ky = dao.get_dang_ky_by_id(id)
 
-        if not phieu_dk:
+        if not phieu_dang_ky:
             return jsonify({'status': 404, 'message': 'Không tìm thấy dữ liệu đăng ký này!'})
 
         # Chỉ sinh viên đăng ký mới được huỷ
-        if phieu_dk.sinh_vien_id != current_user.id:
+        if phieu_dang_ky.sinh_vien_id != current_user.id:
             return jsonify({'status': 403, 'message': 'Không có quyền hủy!'})
 
-        ds_da_dk = DangKy.query.filter_by(sinh_vien_id=current_user.id).all()
-        tong_tc_hien_tai = sum(dk.lop_hoc_phan.mon_hoc.so_tin_chi for dk in ds_da_dk)
-        tc_mon_xoa = phieu_dk.lop_hoc_phan.mon_hoc.so_tin_chi
-        if (tong_tc_hien_tai - tc_mon_xoa) < 12:
+        danh_sach_da_dang_ky = dao.get_registered_classes(phieu_dang_ky.sinh_vien_id)
+
+        tong_tc_hien_tai = sum(ds.lop_hoc_phan.mon_hoc.so_tin_chi for ds in danh_sach_da_dang_ky)
+        so_tin_chi_mon_xoa = phieu_dang_ky.lop_hoc_phan.mon_hoc.so_tin_chi
+
+        if (tong_tc_hien_tai - so_tin_chi_mon_xoa) < TIN_CHI_TOI_THIEU:
             return jsonify({
                 'status': 400,
-                'message': f'Quy định tối thiểu 12 TC. Hiện tại bạn có {tong_tc_hien_tai} TC, xóa môn này sẽ không đủ điều kiện.'
+                'message': f'Quy định tối thiểu {TIN_CHI_TOI_THIEU} TC. Hiện tại bạn có {tong_tc_hien_tai} TC, xóa môn này sẽ không đủ điều kiện.'
             })
 
         # Kiểm tra đã thi giữa kỳ chưa
-        if phieu_dk.lop_hoc_phan.da_thi_giua_ky:
+        if phieu_dang_ky.lop_hoc_phan.da_thi_giua_ky:
             return jsonify({'status': 400, 'message': 'Môn đã có điểm giữa kỳ, không thể hủy!'})
 
-        db.session.delete(phieu_dk)
+        db.session.delete(phieu_dang_ky)
         db.session.commit()
         return jsonify({'status': 200, 'message': 'Hủy môn thành công!'})
 
@@ -165,30 +182,40 @@ def register_route(app):
     @login_required
     def class_register():
         cart = session.get('cart', {})
-        lop_cho = list(cart.values()) if cart else []
+        lop_cho = list(cart.values())
         tong_tc = sum(int(item['tin_chi']) for item in lop_cho)
-        danhSachMonDaDangKy = DangKy.query.filter_by(sinh_vien_id=current_user.id).all()
-        for mon in danhSachMonDaDangKy:
+
+        danh_sach_mon_da_dang_ky = dao.get_registered_classes(current_user.id)
+
+        for mon in danh_sach_mon_da_dang_ky:
             tong_tc += mon.lop_hoc_phan.mon_hoc.so_tin_chi
-        history_data = dao.get_registered_classes(current_user.id)
+
+
 
         # rang buoc huy mon sau 2 tuan hoc
-        huy_mon = True
-        if datetime.now() > NGAY_BAT_DAU_HK + timedelta(weeks=2):
-            huy_mon = False
+        huy_mon_da_dang_ky = True
+        if datetime.now() > HAN_HUY_MON:
+            huy_mon_da_dang_ky = False
+        
+        # het han dang ky mon
+        huy_mon_ghi_danh = True
+        if datetime.now() > HAN_DANG_KY:
+            huy_mon_ghi_danh = False
 
         return render_template('class_register.html',
                                lop_cho=lop_cho,
                                tong_tc=tong_tc,
-                               history=history_data,
-                               huy_mon=huy_mon,
+                               history=danh_sach_mon_da_dang_ky,
+                               huy_mon_da_dang_ky=huy_mon_da_dang_ky,
+                               huy_mon_ghi_danh=huy_mon_ghi_danh,
+                               HAN_DANG_KY=HAN_DANG_KY,
                                TIN_CHI_TOI_THIEU=TIN_CHI_TOI_THIEU)
 
     @app.route('/timetable')
     @login_required
     def timetable():
-        ds_dang_ky = DangKy.query.filter_by(sinh_vien_id=current_user.id).all()
-        lop_da_xac_nhan = [dk.lop_hoc_phan for dk in ds_dang_ky]
+        ds_dang_ky = dao.get_registered_classes(current_user.id)
+        lop_da_xac_nhan = [ds.lop_hoc_phan for ds in ds_dang_ky]
         return render_template('timetable.html', lop_da_xac_nhan=lop_da_xac_nhan)
 
     @app.route('/api/checkout', methods=['POST'])
@@ -197,15 +224,19 @@ def register_route(app):
         cart = session.get('cart', {})
         if not cart:
             return jsonify({'status': 400, 'message': 'Danh sách đang trống!'})
+
         lop_cho = list(cart.values())
         tong_tc = sum(int(item['tin_chi']) for item in lop_cho)
 
-        danhSachMonDaDangKy = DangKy.query.filter_by(sinh_vien_id=current_user.id).all()
-        for mon in danhSachMonDaDangKy:
+        danh_sach_mon_da_dang_ky = dao.get_registered_classes(current_user.id)
+        for mon in danh_sach_mon_da_dang_ky:
             tong_tc += mon.lop_hoc_phan.mon_hoc.so_tin_chi
 
-        if tong_tc < 12:
+        if tong_tc < TIN_CHI_TOI_THIEU:
             return jsonify({'status': 400, 'message': 'Bạn chưa chọn đủ 12 tín chỉ!'})
+        if tong_tc > TIN_CHI_TOI_DA:
+            return jsonify({'status': 400, 'message': 'Bạn chọn quá 25 tín chỉ!'})
+
         ds_loi = []
         try:
             for item in lop_cho:
@@ -226,7 +257,7 @@ def register_route(app):
             else:
                 db.session.commit()
                 session.pop('cart', None)
-                session.modified = True
+
                 return jsonify({'status': 200, 'message': 'Đăng ký thành công toàn bộ môn học!'})
 
         except Exception as e:
@@ -270,14 +301,13 @@ def register_route(app):
 @app.route("/user_information")
 @login_required
 def user_information():
-    user_information = dao.get_registered_classes(current_user.id)
-    return render_template("user_information.html", user_information=user_information)
+    return render_template("user_information.html")
 
 
 @app.context_processor
 def common_data():
     if current_user.is_authenticated:
-        registered_ids = [dk.lop_hoc_phan_id for dk in current_user.ds_dang_ky]
+        registered_ids = [ds.lop_hoc_phan_id for ds in current_user.ds_dang_ky]
     else:
         registered_ids = []
 

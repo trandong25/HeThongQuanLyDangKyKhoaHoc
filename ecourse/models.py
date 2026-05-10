@@ -78,14 +78,15 @@ class DangKy(BaseModel):
     # dùng cho ràng buộc không đăng ký môn đã học
     diem_tong_ket = Column(Float, nullable=True)
 
+
 if __name__ == '__main__':
     with app.app_context():
-        # 1 Xóa toàn bộ dữ liệu cũ và tạo bảng mới
+        # 1. Xóa toàn bộ dữ liệu cũ và tạo bảng mới
         db.drop_all()
         db.create_all()
-        print("Đã làm sạch Database...")
 
-        # 2 Tạo user và admin
+
+        # 2. Tạo user và admin
         user1 = User(
             name="Nguyễn Văn Sinh Viên",
             username="student1",
@@ -101,7 +102,7 @@ if __name__ == '__main__':
         db.session.add_all([user1, admin1])
         db.session.commit()
 
-        # 3 Tạo học kì
+        # 3. Tạo học kì
         hk1 = HocKy(name="Học kỳ 1 - 2026", ngay_bat_dau=date(2026, 9, 5), han_dang_ky=datetime(2026, 9, 20, 23, 59))
         db.session.add(hk1)
         db.session.commit()
@@ -119,32 +120,34 @@ if __name__ == '__main__':
 
         danh_sach_phong = ["A101", "A102", "A205", "B104", "B201", "C302", "C405", "D101", "D202"]
 
-        # 5. tạo môn học và lớp học phần
-        tat_ca_lop_hoc = []
-
-        for ten_mon in danh_sach_ten_mon:
-            # Tạo môn học tín chỉ từ 2 đến 4
+        # 5. Tạo môn học và lớp học phần
+        for i, ten_mon in enumerate(danh_sach_ten_mon):
             mh = MonHoc(name=ten_mon, so_tin_chi=random.randint(2, 4))
             db.session.add(mh)
             db.session.commit()
 
-            lhp = LopHocPhan(
-                mon_hoc_id=mh.id,
-                hoc_ky_id=hk1.id,
-                phong_hoc=f"{random.choice(danh_sach_phong)}",
-                thu=random.randint(2, 7),
-                ca_hoc=random.randint(1, 4),
-                so_luong_max=random.choice([30, 40, 50])
-            )
-            db.session.add(lhp)
-            tat_ca_lop_hoc.append(lhp)
+            # TẠO NHIỀU LỚP HỌC PHẦN (Lịch khác nhau) cho 5 MÔN ĐẦU TIÊN để dễ test
+            # Các môn còn lại chỉ tạo 1 lớp
+            so_luong_lop = 3 if i < 5 else 1
+            lich_da_tao = set()  # Dùng set để lưu lịch, tránh tạo 2 lớp cùng 1 môn bị trùng lịch nhau
+
+            for _ in range(so_luong_lop):
+                while True:
+                    thu = random.randint(2, 7)
+                    ca_hoc = random.randint(1, 4)
+                    if (thu, ca_hoc) not in lich_da_tao:
+                        lich_da_tao.add((thu, ca_hoc))
+                        break
+
+                lhp = LopHocPhan(
+                    mon_hoc_id=mh.id,
+                    hoc_ky_id=hk1.id,
+                    phong_hoc=random.choice(danh_sach_phong),
+                    thu=thu,
+                    ca_hoc=ca_hoc,
+                    so_luong_max=random.choice([30, 40, 50])
+                )
+                db.session.add(lhp)
 
         db.session.commit()
 
-        # 6. TẠO DỮ LIỆU ĐĂNG KÝ
-        dk1 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=tat_ca_lop_hoc[0].id)
-        dk2 = DangKy(sinh_vien_id=user1.id, lop_hoc_phan_id=tat_ca_lop_hoc[1].id)
-        db.session.add_all([dk1, dk2])
-        db.session.commit()
-
-        print("Đã tạo thành công 30 môn học và dữ liệu giả!")
