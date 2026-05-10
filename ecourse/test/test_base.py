@@ -3,6 +3,8 @@ import pytest
 from flask import Flask
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
 
 from ecourse import db, login_manager
 from datetime import datetime,timedelta
@@ -100,9 +102,27 @@ def mock_login_user(mocker, sample_student):
 
     return fake_user
 
+# @pytest.fixture
+# def driver():
+#     service = Service(executable_path='../.venv/chromedriver.exe')
+#     driver = webdriver.Chrome(service=service)
+#     yield driver
+#     driver.quit()
+
 @pytest.fixture
 def driver():
-    service = Service(executable_path='../.venv/chromedriver.exe')
-    driver = webdriver.Chrome(service=service)
+    options = Options()
+    options.add_argument("--headless")  # chạy CI
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+
+    driver = webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()),
+        options=options
+    )
+
+    driver.implicitly_wait(5)
+
     yield driver
+
     driver.quit()
