@@ -11,7 +11,6 @@ from unittest.mock import patch
 
 
 
-
 def create_app():
     app = Flask(__name__, template_folder="../templates")
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
@@ -99,6 +98,7 @@ def mock_login_user(mocker, sample_student):
     mocker.patch("ecourse.dao.current_user", new=fake_user)
 
     return fake_user
+
 
 @pytest.fixture
 def driver():

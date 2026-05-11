@@ -3,6 +3,7 @@ from ecourse.models import LopHocPhan, MonHoc, HocKy, DangKy, User
 from ecourse.admin import LopHocPhanView
 from datetime import datetime, date
 from unittest.mock import patch
+from ecourse.test.test_base import test_session, test_app
 
 
 def test_tao_lop_max_50(test_session):
