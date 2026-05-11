@@ -3,6 +3,7 @@ import pytest
 from flask import Flask
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 from ecourse import db, login_manager
 from datetime import datetime,timedelta
@@ -102,7 +103,10 @@ def mock_login_user(mocker, sample_student):
 
 @pytest.fixture
 def driver():
-    service = Service(executable_path='../.venv/chromedriver.exe')
-    driver = webdriver.Chrome(service=service)
+    # service = Service(executable_path='../.venv/chromedriver.exe')
+    # driver = webdriver.Chrome(service=service)
+    driver = webdriver.Chrome(
+        service=Service(ChromeDriverManager().install())
+    )
     yield driver
     driver.quit()
