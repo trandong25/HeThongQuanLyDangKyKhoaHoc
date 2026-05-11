@@ -2,7 +2,7 @@ name: Run Tests
 
 on: 
   push: 
-    branches: [ "main", "feature/*","release/*" ] 
+    branches: [ "main", "feature/*","release/*", "develop", "feature/test_sel" ] 
   pull_request: 
     branches: [ "main" ] 
 
