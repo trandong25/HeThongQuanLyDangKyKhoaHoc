@@ -100,8 +100,7 @@
 
             <li class="page-item {% if i == current_page %}active{% endif %}">
                 <a class="page-link {% if i == current_page %}bg-success border-success text-white fw-bold{% endif %}"
-                   href="/?page={{i}}">
-                    {{i}}
+                    href="{{ url_for('index', page=i, kw=request.args.get('kw', '')) }}">                    {{i}}
                 </a>
             </li>
 

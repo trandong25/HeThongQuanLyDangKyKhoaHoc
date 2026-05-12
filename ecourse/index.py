@@ -24,7 +24,7 @@ def register_route(app):
 
         page = request.args.get("page", 1, type=int)
         kw = request.args.get("kw")
-        pages = math.ceil(dao.count_lop_hoc_phan() / app.config['PAGE_SIZE'])
+        pages = math.ceil(dao.count_lop_hoc_phan(kw=kw) / app.config['PAGE_SIZE'])
         classes = dao.load_lop_hoc_phan(kw=kw, page=page)
         return render_template("index.html",
                                het_han_dang_ky=het_han_dang_ky,
