@@ -69,11 +69,14 @@ class LopHocPhan(BaseModel):
     hoc_ky= relationship('HocKy', back_populates='ds_lop_hoc_phan')
 
     ds_dang_ky = relationship('DangKy', backref='lop_hoc_phan', lazy=True)
+    def __str__(self):
+        return f"{self.mon_hoc.name} - {self.phong_hoc} (Thứ {self.thu}, Ca {self.ca_hoc})"
+
 
 class DangKy(BaseModel):
     sinh_vien_id = Column(Integer, ForeignKey(User.id), nullable=False)
     lop_hoc_phan_id = Column(Integer, ForeignKey(LopHocPhan.id), nullable=False)
-    ngay_dang_ky = Column(DateTime, default=datetime.now())
+    ngay_dang_ky = Column(DateTime, default=datetime.now)
 
     # dùng cho ràng buộc không đăng ký môn đã học
     diem_tong_ket = Column(Float, nullable=True)
