@@ -15,10 +15,9 @@ def load_hoc_ky():
     return HocKy.query.filter(HocKy.active == True).all()
 
 def load_lop_hoc_phan(hk_id = None, kw = None, page = None):
-    query = LopHocPhan.query.filter(LopHocPhan.active == True)
-
+    query = LopHocPhan.query.join(HocKy).filter(LopHocPhan.active == True, HocKy.active == True)
     if hk_id:
-        query = query.filter(LopHocPhan.hoc_ky_id.__eq__(hk_id))
+        query = query.filter(LopHocPhan.hoc_ky_id == hk_id)
 
     if kw:
         query =query.join(MonHoc).filter(MonHoc.name.contains(kw))
@@ -36,7 +35,7 @@ def count_lop_hoc_phan(hk_id = None, kw = None):
     query = LopHocPhan.query.filter(LopHocPhan.active == True)
 
     if hk_id:
-        query=query.filter(LopHocPhan.hoc_ky_id.__eq__(hk_id))
+        query=query.filter(LopHocPhan.hoc_ky_id == hk_id)
     if kw:
         query =query.join(MonHoc).filter(MonHoc.name.contains(kw))
 

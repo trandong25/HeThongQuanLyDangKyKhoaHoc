@@ -8,12 +8,26 @@ from ecourse.models import MonHoc, LopHocPhan, UserRole, DangKy, HocKy
 from ecourse import db
 from flask_admin import BaseView,expose
 from flask import redirect, flash, url_for, request
-
+from ecourse.config import TIN_CHI_MON_MAX,TIN_CHI_MON_MIN, SO_LUONG_SV_MAX
 
 class AdminView(ModelView):
     def is_accessible(self) -> bool:
         return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
+    def handle_view_exception(self, exc):
+        if isinstance(exc, ValueError):
+            flash(str(exc), 'error')
+            return True
+        return super(AdminView, self).handle_view_exception(exc)
 
+class MonHocView(AdminView):
+    form_columns = ['name', 'so_tin_chi', 'mon_tien_quyet']
+    column_list = ['name', 'so_tin_chi', 'mon_tien_quyet']
+
+    def on_model_change(self, form, model, is_created):
+        if model.so_tin_chi < TIN_CHI_MON_MIN or model.so_tin_chi> TIN_CHI_MON_MAX:
+            raise ValueError("Số tín chỉ phải lớn hơn 2 và nhỏ hơn 5")
+        if model.mon_tien_quyet and model.name == model.mon_tien_quyet.name :
+            raise ValueError("Môn tiên quyết phải khác môn hiện tại")
 class MyAdminIndexView(AdminIndexView):
     @expose('/')
     def index(self):
@@ -39,7 +53,7 @@ class LopHocPhanView(AdminView):
     form_columns = ['mon_hoc', 'hoc_ky', 'phong_hoc', 'thu', 'ca_hoc', 'so_luong_max', 'da_thi_giua_ky', 'active']
 
     def on_model_change(self, form, model, is_created):
-        if model.so_luong_max > 50 or model.so_luong_max <= 0:
+        if model.so_luong_max > SO_LUONG_SV_MAX or model.so_luong_max <= 0:
             raise ValueError("Số lượng sinh viên phải từ 1 đến 50")
         if model.ca_hoc < 1 or model.ca_hoc > 4:
             raise ValueError("Ca học chỉ từ 1 đến 4!")
@@ -66,12 +80,6 @@ class LopHocPhanView(AdminView):
             if lop_trung and lop_trung is not model:
                 raise ValueError(f'Phòng {phong_chuan} đã có lớp id {lop_trung.id}')
 
-    def handle_view_exception(self, exc):
-        if isinstance(exc, ValueError):
-            flash(str(exc), 'error')
-            return True
-
-        return super(LopHocPhanView, self).handle_view_exception(exc)
     def delete_model(self, model):
         sv_dang__ky = DangKy.query.filter_by(lop_hoc_phan_id = model.id).count()
         if sv_dang__ky > 0:
@@ -89,7 +97,7 @@ class ThongKeView(BaseView):
         return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
 
 admin = Admin(app=app, name="e-Course's Admin",template_mode='bootstrap4', index_view=MyAdminIndexView())
-admin.add_view(AdminView(MonHoc,db.session, name= 'Môn Học'))
+admin.add_view(MonHocView(MonHoc,db.session, name= 'Môn Học'))
 admin.add_view(AdminView(HocKy,db.session, name= 'Học Kỳ'))
 admin.add_view(LopHocPhanView(LopHocPhan,db.session, name = 'Lớp học phần'))
 admin.add_view(ThongKeView(name='Thống kê'))
