@@ -2,6 +2,7 @@ import pytest
 
 from flask import Flask
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
@@ -103,10 +104,19 @@ def mock_login_user(mocker, sample_student):
 
 @pytest.fixture
 def driver():
-    # service = Service(executable_path='../.venv/chromedriver.exe')
-    # driver = webdriver.Chrome(service=service)
-    driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install())
-    )
+    # # service = Service(executable_path='../.venv/chromedriver.exe')
+    # # driver = webdriver.Chrome(service=service)
+    # driver = webdriver.Chrome(
+    #     service=Service(ChromeDriverManager().install())
+    # )
+
+    chrome_options = Options()
+
+    chrome_options.add_argument("--headless")  # Chạy không cần mở cửa sổ trình duyệt
+    chrome_options.add_argument("--no-sandbox")  # Bỏ qua lớp bảo mật (cần cho Linux)
+    chrome_options.add_argument("--disable-dev-shm-usage")  # Tránh lỗi thiếu bộ nhớ đệm
+    chrome_options.add_argument("--window-size=1920,1080")  # Đặt kích thước màn hình ảo
+
+    driver = webdriver.Chrome(options=chrome_options)
     yield driver
     driver.quit()
