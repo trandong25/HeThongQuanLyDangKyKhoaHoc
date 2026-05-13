@@ -107,7 +107,9 @@ def test_checkout(driver):
         assert True
         return
 
+    time.sleep(3)
     home.accept_alert()
+
 
     page = ClassRegisterPage(driver)
     page.open_page()
