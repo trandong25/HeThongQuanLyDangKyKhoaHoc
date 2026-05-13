@@ -306,9 +306,9 @@ def test_load_lop_hoc_phan_page(test_session, test_app, sample_lop_hoc_phan):
     with test_app.app_context():
         test_app.config["PAGE_SIZE"] = 1
 
-        page1 = load_lop_hoc_phan(page=1)
-        assert len(page1) == 1
+        page_1 = load_lop_hoc_phan(page=1)
+        assert len(page_1) == 1
 
-        page2 = load_lop_hoc_phan(page=2)
-        assert len(page2) == 1
-        assert page1[0].id != page2[0].id
+        page_2 = load_lop_hoc_phan(page=2)
+        assert len(page_2) == 1
+        assert page_1[0].id != page_2[0].id

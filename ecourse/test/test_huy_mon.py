@@ -122,4 +122,3 @@ def test_xoa_mon_khong_chinh_chu(test_client, test_session, mock_login_user, sam
 
     assert data['status'] == 403
     assert "Không có quyền" in data['message']
-
