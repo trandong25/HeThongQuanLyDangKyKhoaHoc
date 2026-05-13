@@ -41,7 +41,7 @@ def test_dang_ky_tam_gio_fail(test_client, mock_login_user,sample_lop_hoc_phan):
             }
         }
 
-    payload = {"id":l1.id}
+    payload = {"id":l2.id}
     res = test_client.post("api/dang_ky_tam", json = payload)
     data = res.get_json()
 
